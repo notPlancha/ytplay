@@ -339,7 +339,7 @@ wheels = [
 
 [[package]]
 name = "ytplay"
-version = "1.0.0.dev0"
+version = "1.0.0"
 source = { editable = "." }
 dependencies = [
     { name = "click" },

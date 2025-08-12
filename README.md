@@ -3,7 +3,7 @@
 A Python CLI tool to interact with the YouTube API and manage playlist information. Created to sort playlists by video time, but it has more stuff too.
 
 ## Installation
-```
+```sh
 uv tool install ytplay
 ytplay playlist sort
 # or
@@ -48,7 +48,9 @@ uvx ytplay playlist sort
 
 > [!NOTE]  
 > - **API Quota Limits**: The YouTube Data API v3 has daily quota limits (10,000 units per day for free projects). Large playlists or frequent usage may hit these limits.
+>
 > **Watch Later Playlist**: Cannot access or manage the "Watch Later" playlist as it's not accessible via the YouTube API. For that you can pray and use a [browser script](https://greasyfork.org/en/scripts?q=watch+later+sort) or extension.
+>
 > **Playlist limits**: A playlist can have a maximum of 5,000 videos AFAIK.
 
 ## Usage
