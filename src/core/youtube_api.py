@@ -57,8 +57,13 @@ def delete_playlist(youtube: YouTubeService, playlist_id: str) -> bool:
 
 def add_video_to_playlist(
   service: YouTubeService, playlist_id: str, video_id: str, position: int | None = None
-) -> bool:
-  """Add a video to a playlist at a specific position."""
+) -> tuple[bool, str]:
+  """Add a video to a playlist at a specific position.
+  
+  Returns:
+    Tuple of (success: bool, error_type: str)
+    error_type can be: 'success', 'unavailable', 'permission', 'other'
+  """
   try:
     request_body = {
       "snippet": {
@@ -73,11 +78,25 @@ def add_video_to_playlist(
 
     request = service.playlistItems().insert(part="snippet", body=request_body)
     request.execute()
-    return True
+    return True, "success"
 
   except HttpError as error:
-    print(f"Error adding video {video_id} to playlist: {error}")
-    return False
+    # Parse error details to determine the type of error
+    try:
+      error_details = error.error_details[0] if error.error_details else {}
+      error_reason = error_details.get('reason', '') if isinstance(error_details, dict) else ''
+    except (AttributeError, IndexError):
+      error_reason = ''
+    
+    if error_reason == 'failedPrecondition':
+      # This typically means the video is private, deleted, or unavailable
+      return False, "unavailable"
+    elif error.resp.status == 403:
+      # Permission denied
+      return False, "permission"
+    else:
+      print(f"Error adding video {video_id} to playlist: {error}")
+      return False, "other"
 
 
 def add_videos_to_playlist_sequential(
@@ -86,10 +105,11 @@ def add_videos_to_playlist_sequential(
   video_ids: list[str],
   start_position: int = 0,
   show_progress: bool = True,
-) -> tuple[int, int]:
+) -> tuple[int, int, int]:
   """Add multiple videos to a playlist using individual requests.
 
-  IMPORTANT: This function stops execution on the first failed video insertion.
+  This function now continues processing even when videos fail to be added,
+  specifically handling unavailable/private videos gracefully.
 
   Args:
       service: YouTube service instance
@@ -99,13 +119,15 @@ def add_videos_to_playlist_sequential(
       show_progress: Whether to show progress bar
 
   Returns:
-      Tuple of (successful_count, failed_count) - execution stops on first failure
+      Tuple of (successful_count, unavailable_count, other_failures_count)
   """
   if not video_ids:
-    return 0, 0
+    return 0, 0, 0
 
   successful_count = 0
-  failed_count = 0
+  unavailable_count = 0
+  other_failures_count = 0
+  unavailable_videos = []
 
   # Initialize progress bar
   pbar = None
@@ -118,20 +140,22 @@ def add_videos_to_playlist_sequential(
     )
 
   for i, video_id in enumerate(video_ids):
-    position = start_position + i
-    success = add_video_to_playlist(service, playlist_id, video_id, position)
+    position = start_position + successful_count  # Adjust position for skipped videos
+    success, error_type = add_video_to_playlist(service, playlist_id, video_id, position)
 
     if success:
       successful_count += 1
+    elif error_type == "unavailable":
+      unavailable_count += 1
+      unavailable_videos.append(video_id)
     else:
-      failed_count += 1
-      if pbar:
-        pbar.close()
-      print(
-        f"\n❌ Stopping execution due to failed video insertion for video: {video_id}"
-      )
-      print(f"Successfully added {successful_count} videos before failure.")
-      return successful_count, failed_count
+      other_failures_count += 1
+      # For non-unavailable errors, we still continue but this might indicate a more serious issue
+      if other_failures_count > 5:  # Stop if too many non-unavailable errors occur
+        if pbar:
+          pbar.close()
+        print(f"\n❌ Stopping execution due to too many serious errors (non-unavailable failures)")
+        break
 
     if pbar:
       pbar.update(1)
@@ -142,7 +166,13 @@ def add_videos_to_playlist_sequential(
   if pbar:
     pbar.close()
 
-  return successful_count, failed_count
+  # Report skipped videos
+  if unavailable_videos:
+    print(f"\n⚠️  Skipped {unavailable_count} unavailable/private video(s):")
+    for video_id in unavailable_videos:
+      print(f"   - https://www.youtube.com/watch?v={video_id}")
+
+  return successful_count, unavailable_count, other_failures_count
 
 
 def get_playlists(
@@ -540,17 +570,30 @@ def create_sorted_playlist(
 
   # Use sequential processing (batch processing is not available)
   video_ids = [video["video_id"] for video in sorted_videos]
-  successful_count, failed_count = add_videos_to_playlist_sequential(
+  successful_count, unavailable_count, other_failures_count = add_videos_to_playlist_sequential(
     service, new_playlist_id, video_ids, show_progress=show_progress
   )
 
-  if failed_count > 0:
-    print("❌ Process terminated due to video insertion failure.")
-    print(f"Partial playlist created with {successful_count} videos.")
-    return None  # Return None to indicate partial failure
+  total_processed = successful_count + unavailable_count + other_failures_count
+  
+  if other_failures_count > 0:
+    print(f"⚠️  Encountered {other_failures_count} serious error(s) during playlist creation.")
+    if other_failures_count > 5:
+      print("❌ Process terminated due to too many serious errors.")
+      print(f"Partial playlist created with {successful_count} videos.")
+      return None  # Return None to indicate partial failure
+  
+  if successful_count == 0:
+    print("❌ No videos were successfully added to the playlist.")
+    return None
+  
+  success_message = f"✓ Successfully created sorted playlist: '{new_playlist_title}'"
+  if unavailable_count > 0:
+    success_message += f"\nAdded {successful_count} videos successfully, skipped {unavailable_count} unavailable video(s)"
   else:
-    print(f"✓ Successfully created sorted playlist: '{new_playlist_title}'")
-    print(f"Added all {successful_count} videos successfully")
-    print(f"Playlist URL: https://www.youtube.com/playlist?list={new_playlist_id}")
+    success_message += f"\nAdded all {successful_count} videos successfully"
+  
+  print(success_message)
+  print(f"Playlist URL: https://www.youtube.com/playlist?list={new_playlist_id}")
 
   return new_playlist_id
