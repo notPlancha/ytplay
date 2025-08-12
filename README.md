@@ -1,14 +1,16 @@
-# sort-playlist-yt
+# ytplay
 
 A Python CLI tool to interact with the YouTube API and manage playlist information. Created to sort playlists by video time, but it has more stuff too.
 
+## Installation
+```
+uv tool install ytplay
+ytplay playlist sort
+# or
+uvx ytplay playlist sort
+```
+
 ## Setup
-
-### Prerequisites
-
-- Python 3.13 or higher
-- [uv package manager](https://docs.astral.sh/uv/getting-started/installation/) (recommended) or pip
-
 
 ### Set Up Google API Credentials
 
@@ -29,20 +31,6 @@ A Python CLI tool to interact with the YouTube API and manage playlist informati
 4. **Add Test User** (Important):
    - Go to APIs & Services > OAuth consent screen
    - Add your Gmail address as a test user
-
-### Installation
-
-```bash
-git clone https://github.com/notPlancha/sort-yt-playlist.git
-cd sort-yt-playlist
-uv sync
-```
-
-After installation, you can use either:
-- `ytplay` (recommended - direct command)
-- `python main.py` (development/fallback)
-
-> **Note**: The `ytplay` command is available globally after running `uv sync`.
 
 ### Troubleshooting
 
@@ -68,8 +56,8 @@ After installation, you can use either:
 ### Quick Start
 
 ```bash
-# First time setup
-ytplay auth login
+# Authenticate with YouTube
+ytplay auth login --force
 
 # List all your playlists
 ytplay playlist list
@@ -182,17 +170,7 @@ sort-wl/
 └── README.md
 ```
 
-### Module Overview
-
-- **`src/cli/`** - Modular command-line interface using Click framework
-  - `auth_commands.py` - Authentication commands (login, logout, status)
-  - `playlist_commands.py` - Playlist management commands 
-  - `cache_commands.py` - Cache management commands
-  - `common.py` - Shared utilities and option groups
-- **`src/core/`** - Core functionality (authentication, API calls, sorting, caching)
-- **`src/types/`** - TypedDict definitions for API responses and internal data
-- **`src/output/`** - Functions for displaying and saving data
-- **`config/`** - Configuration and credential files (OAuth credentials, cached tokens, cache storage)
+Overengineered for sure but whtv thats what happens with vibe coding.
 
 ## TODO
 - [ ] Make sorting resumable
