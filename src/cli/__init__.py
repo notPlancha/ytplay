@@ -9,7 +9,7 @@ from .playlist_commands import playlist
 
 @click.group()
 @click.version_option(version="1.0.0-dev", prog_name="ytplay")
-def main():
+def main() -> None:
   """
   YouTube Playlist CLI Tool
 

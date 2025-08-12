@@ -42,7 +42,7 @@ from .common import (
 
 
 @click.group()
-def playlist():
+def playlist() -> None:
   """Playlist management commands."""
   pass
 

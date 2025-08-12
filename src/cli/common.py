@@ -1,5 +1,8 @@
 """Common utilities for CLI commands."""
 
+from collections.abc import Callable, Sequence
+from typing import Any, TypeVar
+
 import click
 
 from ..core.auth import authenticate_youtube
@@ -86,11 +89,14 @@ cache_options = [
   click.option("--no-cache", is_flag=True, help="Skip cache and fetch fresh data"),
 ]
 
+# Type variable for function decorators
+F = TypeVar("F", bound=Callable[..., Any])
 
-def add_options(options):
+
+def add_options(options: Sequence[Callable[[F], F]]) -> Callable[[F], F]:
   """Decorator to add multiple options to a command."""
 
-  def decorator(func):
+  def decorator(func: F) -> F:
     for option in reversed(options):
       func = option(func)
     return func

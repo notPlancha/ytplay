@@ -6,7 +6,7 @@ from ..core.cache import clear_cache, format_cache_size, get_cache_stats
 
 
 @click.group()
-def cache():
+def cache() -> None:
   """Cache management commands."""
   pass
 

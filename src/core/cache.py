@@ -3,9 +3,10 @@
 import hashlib
 import json
 from pathlib import Path
-from typing import Any, TypeVar
+from typing import TypeVar
 
 from ..config import CONFIG_DIR
+from ..types.youtube import EnhancedVideo, Playlist, PlaylistItem
 
 # Cache directory
 CACHE_DIR = Path(CONFIG_DIR) / "cache"
@@ -40,7 +41,9 @@ def _get_cache_filepath(cache_type: str, identifier: str) -> Path:
   return CACHE_DIR / filename
 
 
-def get_cached_data(cache_type: str, identifier: str) -> Any | None:
+def get_cached_data(
+  cache_type: str, identifier: str
+) -> list[Playlist] | list[PlaylistItem] | list[EnhancedVideo] | None:
   """Retrieve cached data if it exists."""
   cache_file = _get_cache_filepath(cache_type, identifier)
 
@@ -60,7 +63,11 @@ def get_cached_data(cache_type: str, identifier: str) -> Any | None:
     return None
 
 
-def save_cached_data(cache_type: str, identifier: str, data: Any) -> bool:
+def save_cached_data(
+  cache_type: str,
+  identifier: str,
+  data: list[Playlist] | list[PlaylistItem] | list[EnhancedVideo],
+) -> bool:
   """Save data to cache."""
   cache_file = _get_cache_filepath(cache_type, identifier)
 

@@ -10,7 +10,7 @@ from ..core.youtube_api import get_playlists
 
 
 @click.group()
-def auth():
+def auth() -> None:
   """Authentication commands."""
   pass
 
