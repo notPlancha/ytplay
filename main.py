@@ -588,31 +588,47 @@ def _refresh_credentials(creds: oauth2Credentials | externalCredentials, token_f
     return None
 
 
-def _save_credentials(creds: oauth2Credentials | externalCredentials, token_file: str) -> None:
+def _save_credentials(creds: oauth2Credentials | externalCredentials, token_file: str, replace = False) -> None:
   """Save credentials to a token file."""
   # creds.to_json() returns a JSON string, so parse it to dict before dumping
   creds_json = creds.to_json()
   if isinstance(creds_json, str):
     creds_json = json.loads(creds_json)
+  if os.path.exists(token_file):
+    if not replace:
+      raise FileExistsError(f"Token file '{token_file}' already exists. Use replace=True to overwrite.")
+    else:
+      print(f"Warning: Overwriting existing token file '{token_file}'.")
   with open(token_file, "w") as f:
     json.dump(creds_json, f, indent=2)
 
 
-def authenticate_youtube() -> YouTubeService:
+def _auth_flow(token_out: str) -> oauth2Credentials | externalCredentials:
+  """Create and return an OAuth 2.0 flow object."""
+  flow = InstalledAppFlow.from_client_secrets_file("client_secrets.json", SCOPES)
+  creds = flow.run_local_server(port=0)
+  return creds
+
+
+def authenticate_youtube(force: bool = False) -> YouTubeService:
   """Authenticate with YouTube API and return the service object."""
   token_file: str = "youtube.dat"
   creds: oauth2Credentials | externalCredentials | None = _load_credentials(token_file)
 
   # If there are no (valid) credentials available, let the user log in.
-  if not creds or not creds.valid:
+  if force:
+    print("Forcing re-authentication...")
+    creds = _auth_flow(token_file)
+    _save_credentials(creds, token_file, replace=True)
+
+  elif not creds or not creds.valid:
     if creds and creds.expired and creds.refresh_token:
       print("Refreshing expired YouTube API credentials...")
       creds = _refresh_credentials(creds, token_file)
     if not creds:
       print("No valid credentials found. Starting fresh authentication flow...")
-      flow = InstalledAppFlow.from_client_secrets_file("client_secrets.json", SCOPES)
-      creds = flow.run_local_server(port=0)
-      _save_credentials(creds, token_file)
+      creds = _auth_flow(token_file)
+      
   else:
     print("Using cached YouTube API credentials...")
 
@@ -1174,8 +1190,7 @@ def cli() -> None:
   """YouTube Playlist CLI Tool
 
   Available commands:
-  - auth: Authenticate with YouTube API
-    Flags: --force (Force reauthentication by removing existing credentials)
+  - login: --force (Force reauthentication by removing existing credentials)
   - list-playlists: Show your YouTube playlists
     Flags: --output/-o (Output to file), --format/-f (text/json format)
   - playlist-summary: Get summary info for a playlist
@@ -1200,65 +1215,25 @@ def cli() -> None:
   is_flag=True,
   help="Force reauthentication by removing existing credentials",
 )
-def auth(force: bool) -> None:
+def login(force: bool) -> None:
   """Authenticate with YouTube and store credentials."""
-  import shutil
-  
-  token_file = "youtube.dat"
-  backup_file = "youtube.dat.backup"
-  
   try:
-
-    if force:
-      if os.path.exists(token_file):
-        # Create a backup instead of deleting immediately
-        import shutil
-        shutil.copy2(token_file, backup_file)
-        print("� Existing credentials backed up. Forcing reauthentication...")
-      else:
-        print("⚠️  No existing credentials found to backup.")
-
-    # Check if credentials already exist
-    existing_creds_exist = os.path.exists(token_file)
-    if existing_creds_exist and not force:
-      print("🔍 Checking existing YouTube API credentials...")
+    token_file = "youtube.dat"
+    if os.path.exists(token_file):
+      print(f"🔑 Found existing credentials at: {token_file}")
+      service = authenticate_youtube(force=force)
+      if not force: # Check if existing credentials are valid
+        print("🔍 Checking existing YouTube API credentials...")
+        playlists = get_playlists(service, max_results=1)
+        if playlists is not None:
+          print("✅ Authentication verified! Using cached credentials.")
+        else:
+          print("❌ Authentication failed or no access to playlists.")
     else:
       print("🔑 Starting YouTube API authentication flow...")
-
-    # Temporarily remove the token file for forced auth
-    if force and existing_creds_exist:
-      os.remove(token_file)
-
-    service = authenticate_youtube()
-
-    # Try a simple API call to verify authentication
-    print("✅ Testing API connection...")
-    playlists = get_playlists(service, max_results=1)
-
-    if playlists is not None:
-      # Authentication successful - remove backup if it exists
-      if force and os.path.exists(backup_file):
-        os.remove(backup_file)
-        print("✅ Authentication successful! New credentials saved, backup removed.")
-      elif existing_creds_exist and not force:
-        print("✅ Authentication verified! Using cached credentials.")
-      else:
-        print("✅ Authentication successful! New credentials saved.")
-    else:
-      # Authentication failed - restore backup if it exists
-      if force and os.path.exists(backup_file):
-        shutil.move(backup_file, token_file)
-        print("❌ Authentication failed. Original credentials restored.")
-      else:
-        print("❌ Authentication failed or no access to playlists.")
+      service = authenticate_youtube()
 
   except Exception as error:
-    # If there's an error and we have a backup, restore it
-    if force and os.path.exists(backup_file):
-      if os.path.exists(token_file):
-        os.remove(token_file)
-      shutil.move(backup_file, token_file)
-      print("❌ Authentication error occurred. Original credentials restored.")
     print(f"❌ An error occurred during authentication: {error}")
 
 
