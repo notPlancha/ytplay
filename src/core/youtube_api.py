@@ -1,6 +1,7 @@
 """YouTube API functions for playlists and videos."""
 
 import time
+from typing import Literal
 
 from googleapiclient.errors import HttpError
 from tqdm import tqdm
@@ -57,12 +58,14 @@ def delete_playlist(youtube: YouTubeService, playlist_id: str) -> bool:
 
 def add_video_to_playlist(
   service: YouTubeService, playlist_id: str, video_id: str, position: int | None = None
-) -> tuple[bool, str]:
+) -> tuple[
+  bool, Literal["success", "unavailable", "permission", "quota_exceeded", "other"]
+]:
   """Add a video to a playlist at a specific position.
-  
+
   Returns:
     Tuple of (success: bool, error_type: str)
-    error_type can be: 'success', 'unavailable', 'permission', 'other'
+    error_type can be: 'success', 'unavailable', 'permission', 'quota_exceeded', 'other'
   """
   try:
     request_body = {
@@ -84,16 +87,22 @@ def add_video_to_playlist(
     # Parse error details to determine the type of error
     try:
       error_details = error.error_details[0] if error.error_details else {}
-      error_reason = error_details.get('reason', '') if isinstance(error_details, dict) else ''
+      error_reason = (
+        error_details.get("reason", "") if isinstance(error_details, dict) else ""
+      )
     except (AttributeError, IndexError):
-      error_reason = ''
-    
-    if error_reason == 'failedPrecondition':
+      error_reason = ""
+
+    if error_reason == "failedPrecondition" or error.resp.status == 404:
       # This typically means the video is private, deleted, or unavailable
       return False, "unavailable"
     elif error.resp.status == 403:
       # Permission denied
+      # check if it's a quota issue or permission error
+      if "quotaExceeded" in error_reason:
+        return False, "quota_exceeded"
       return False, "permission"
+
     else:
       print(f"Error adding video {video_id} to playlist: {error}")
       return False, "other"
@@ -141,20 +150,29 @@ def add_videos_to_playlist_sequential(
 
   for i, video_id in enumerate(video_ids):
     position = start_position + successful_count  # Adjust position for skipped videos
-    success, error_type = add_video_to_playlist(service, playlist_id, video_id, position)
+    success, error_type = add_video_to_playlist(
+      service, playlist_id, video_id, position
+    )
 
     if success:
       successful_count += 1
     elif error_type == "unavailable":
       unavailable_count += 1
       unavailable_videos.append(video_id)
+    # quota
+    elif error_type == "quota_exceeded":
+      print("❌ Quota exceeded, try again tomorrow")
+      if pbar:
+        pbar.close()
+      break
     else:
       other_failures_count += 1
-      # For non-unavailable errors, we still continue but this might indicate a more serious issue
       if other_failures_count > 5:  # Stop if too many non-unavailable errors occur
         if pbar:
           pbar.close()
-        print(f"\n❌ Stopping execution due to too many serious errors (non-unavailable failures)")
+        print(
+          "\n❌ Stopping execution due to too many serious errors (non-unavailable failures)"
+        )
         break
 
     if pbar:
@@ -570,29 +588,33 @@ def create_sorted_playlist(
 
   # Use sequential processing (batch processing is not available)
   video_ids = [video["video_id"] for video in sorted_videos]
-  successful_count, unavailable_count, other_failures_count = add_videos_to_playlist_sequential(
-    service, new_playlist_id, video_ids, show_progress=show_progress
+  successful_count, unavailable_count, other_failures_count = (
+    add_videos_to_playlist_sequential(
+      service, new_playlist_id, video_ids, show_progress=show_progress
+    )
   )
 
   total_processed = successful_count + unavailable_count + other_failures_count
-  
+
   if other_failures_count > 0:
-    print(f"⚠️  Encountered {other_failures_count} serious error(s) during playlist creation.")
+    print(
+      f"⚠️  Encountered {other_failures_count} serious error(s) during playlist creation."
+    )
     if other_failures_count > 5:
       print("❌ Process terminated due to too many serious errors.")
       print(f"Partial playlist created with {successful_count} videos.")
       return None  # Return None to indicate partial failure
-  
+
   if successful_count == 0:
     print("❌ No videos were successfully added to the playlist.")
     return None
-  
+
   success_message = f"✓ Successfully created sorted playlist: '{new_playlist_title}'"
   if unavailable_count > 0:
     success_message += f"\nAdded {successful_count} videos successfully, skipped {unavailable_count} unavailable video(s)"
   else:
     success_message += f"\nAdded all {successful_count} videos successfully"
-  
+
   print(success_message)
   print(f"Playlist URL: https://www.youtube.com/playlist?list={new_playlist_id}")
 

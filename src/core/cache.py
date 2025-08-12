@@ -3,7 +3,7 @@
 import hashlib
 import json
 from pathlib import Path
-from typing import TypeVar
+from typing import Literal, TypeVar
 
 from ..config import CONFIG_DIR
 from ..types.youtube import EnhancedVideo, Playlist, PlaylistItem
@@ -20,13 +20,16 @@ VIDEOS_WITH_DURATIONS_CACHE_EXT = ".videos_durations.json"
 # Generic type for cached data
 T = TypeVar("T")
 
+# Cache type literal
+CacheType = Literal["playlist", "videos", "videos_durations"]
+
 
 def _get_cache_key(data: str) -> str:
   """Generate a consistent cache key from input data."""
   return hashlib.sha256(data.encode("utf-8")).hexdigest()[:16]
 
 
-def _get_cache_filepath(cache_type: str, identifier: str) -> Path:
+def _get_cache_filepath(cache_type: CacheType, identifier: str) -> Path:
   """Get the cache file path for a given type and identifier."""
   cache_key = _get_cache_key(identifier)
   if cache_type == "playlist":
@@ -42,7 +45,7 @@ def _get_cache_filepath(cache_type: str, identifier: str) -> Path:
 
 
 def get_cached_data(
-  cache_type: str, identifier: str
+  cache_type: CacheType, identifier: str
 ) -> list[Playlist] | list[PlaylistItem] | list[EnhancedVideo] | None:
   """Retrieve cached data if it exists."""
   cache_file = _get_cache_filepath(cache_type, identifier)
@@ -64,7 +67,7 @@ def get_cached_data(
 
 
 def save_cached_data(
-  cache_type: str,
+  cache_type: CacheType,
   identifier: str,
   data: list[Playlist] | list[PlaylistItem] | list[EnhancedVideo],
 ) -> bool:
@@ -80,7 +83,7 @@ def save_cached_data(
     return False
 
 
-def clear_cache(cache_type: str | None = None) -> int:
+def clear_cache(cache_type: CacheType | None = None) -> int:
   """Clear cache files.
 
   Args:

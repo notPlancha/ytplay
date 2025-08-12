@@ -36,7 +36,7 @@ def select_playlist_interactive(
       click.Abort: If no playlists found or invalid selection
   """
   try:
-    click.echo("Retrieving your playlists...")
+    click.echo(f"📥 {click.style('Retrieving your playlists...', fg='cyan')}")
     playlists = get_playlists(service)
 
     if not playlists:
@@ -50,7 +50,23 @@ def select_playlist_interactive(
       pid = playlist["id"]
       video_count = playlist["contentDetails"]["itemCount"]
       privacy = playlist.get("status", {}).get("privacyStatus", "Unknown")
-      click.echo(f"{i:2}. {title} ({video_count} videos, {privacy}) (ID: {pid})")
+
+      # Color the privacy status
+      if privacy == "private":
+        privacy_color = "red"
+      elif privacy == "public":
+        privacy_color = "green"
+      elif privacy == "unlisted":
+        privacy_color = "yellow"
+      else:
+        privacy_color = "white"
+
+      click.echo(
+        f"{click.style(f'{i:2}.', fg='blue', bold=True)} {click.style(title, fg='white', bold=True)} "
+        f"({click.style(str(video_count), fg='magenta', bold=True)} videos, "
+        f"{click.style(privacy, fg=privacy_color, bold=True)}) "
+        f"(ID: {click.style(pid, fg='cyan')})"
+      )
 
     # Get user selection
     try:

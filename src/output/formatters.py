@@ -2,84 +2,129 @@
 
 import json
 
+import click
+
 from ..types.youtube import EnhancedVideo, Playlist, PlaylistItem
 
 
 def display_playlists(playlists: list[Playlist]) -> None:
   """Display playlist information in a formatted way."""
   if not playlists:
-    print("No playlists found.")
+    click.echo("No playlists found.")
     return
 
-  print(f"\nFound {len(playlists)} playlist(s):")
-  print("-" * 80)
+  click.echo(
+    f"\nFound {click.style(str(len(playlists)), fg='cyan', bold=True)} playlist(s):"
+  )
+  click.echo("-" * 80)
 
   for i, playlist in enumerate(playlists, 1):
     snippet = playlist["snippet"]
     content_details = playlist["contentDetails"]
+    privacy_status = playlist.get("status", {}).get("privacyStatus", "Unknown")
+    video_count = content_details["itemCount"]
 
-    print(f"{i}. Title: {snippet['title']}")
-    print(f"   ID: {playlist['id']}")
-    print(f"   Description: {snippet.get('description', 'No description')[:100]}...")
-    print(f"   Video Count: {content_details['itemCount']}")
-    print(f"   Created: {snippet['publishedAt']}")
-    print(f"   Privacy: {playlist.get('status', {}).get('privacyStatus', 'Unknown')}")
-    print("-" * 80)
+    # Color the privacy status
+    if privacy_status == "private":
+      privacy_color = "red"
+    elif privacy_status == "public":
+      privacy_color = "green"
+    elif privacy_status == "unlisted":
+      privacy_color = "yellow"
+    else:
+      privacy_color = "white"
+
+    click.echo(
+      f"{click.style(f'{i}.', fg='blue', bold=True)} Title: {click.style(snippet['title'], fg='white', bold=True)}"
+    )
+    click.echo(f"   ID: {click.style(playlist['id'], fg='cyan')}")
+    click.echo(
+      f"   Description: {snippet.get('description', 'No description')[:100]}..."
+    )
+    click.echo(
+      f"   Video Count: {click.style(str(video_count), fg='magenta', bold=True)}"
+    )
+    click.echo(f"   Created: {click.style(snippet['publishedAt'], fg='blue')}")
+    click.echo(
+      f"   Privacy: {click.style(privacy_status, fg=privacy_color, bold=True)}"
+    )
+    click.echo("-" * 80)
 
 
 def display_playlist_info(playlist: Playlist) -> None:
   """Display information for a single playlist in a formatted way."""
   if not playlist:
-    print("No playlist info to display.")
+    click.echo("No playlist info to display.")
     return
   snippet = playlist["snippet"]
   content_details = playlist["contentDetails"]
-  print("\nPlaylist Info:")
-  print("-" * 80)
-  print(f"Title: {snippet['title']}")
-  print(f"ID: {playlist['id']}")
-  print(f"Description: {snippet.get('description', 'No description')[:300]}")
-  print(f"Video Count: {content_details['itemCount']}")
-  print(f"Created: {snippet['publishedAt']}")
-  print(f"Privacy: {playlist.get('status', {}).get('privacyStatus', 'Unknown')}")
-  print("-" * 80)
+  privacy_status = playlist.get("status", {}).get("privacyStatus", "Unknown")
+  video_count = content_details["itemCount"]
+
+  # Color the privacy status
+  if privacy_status == "private":
+    privacy_color = "red"
+  elif privacy_status == "public":
+    privacy_color = "green"
+  elif privacy_status == "unlisted":
+    privacy_color = "yellow"
+  else:
+    privacy_color = "white"
+
+  click.echo(f"\n{click.style('Playlist Info:', fg='cyan', bold=True)}")
+  click.echo("-" * 80)
+  click.echo(f"Title: {click.style(snippet['title'], fg='white', bold=True)}")
+  click.echo(f"ID: {click.style(playlist['id'], fg='cyan')}")
+  click.echo(f"Description: {snippet.get('description', 'No description')[:300]}")
+  click.echo(f"Video Count: {click.style(str(video_count), fg='magenta', bold=True)}")
+  click.echo(f"Created: {click.style(snippet['publishedAt'], fg='blue')}")
+  click.echo(f"Privacy: {click.style(privacy_status, fg=privacy_color, bold=True)}")
+  click.echo("-" * 80)
 
 
 def display_playlist_videos(videos: list[PlaylistItem]) -> None:
   """Display playlist videos in a formatted way."""
   if not videos:
-    print("No videos found in this playlist.")
+    click.echo("No videos found in this playlist.")
     return
 
-  print(f"\nFound {len(videos)} video(s) in playlist:")
-  print("-" * 80)
+  click.echo(
+    f"\nFound {click.style(str(len(videos)), fg='cyan', bold=True)} video(s) in playlist:"
+  )
+  click.echo("-" * 80)
 
   for i, video in enumerate(videos, 1):
     snippet = video["snippet"]
     video_id = snippet["resourceId"]["videoId"]
 
-    print(f"{i}. Title: {snippet['title']}")
-    print(f"   Video ID: {video_id}")
-    print(
-      f"   Channel: {snippet.get('videoOwnerChannelTitle', snippet['channelTitle'])}"
+    click.echo(
+      f"{click.style(f'{i}.', fg='blue', bold=True)} Title: {click.style(snippet['title'], fg='white', bold=True)}"
     )
-    print(f"   Position: {snippet['position']}")
-    print(f"   Published: {snippet['publishedAt']}")
-    print(f"   URL: https://www.youtube.com/watch?v={video_id}")
+    click.echo(f"   Video ID: {click.style(video_id, fg='cyan')}")
+    click.echo(
+      f"   Channel: {click.style(snippet.get('videoOwnerChannelTitle', snippet['channelTitle']), fg='yellow')}"
+    )
+    click.echo(f"   Position: {click.style(str(snippet['position']), fg='magenta')}")
+    click.echo(f"   Published: {click.style(snippet['publishedAt'], fg='blue')}")
+    click.echo(
+      f"   URL: {click.style(f'https://www.youtube.com/watch?v={video_id}', fg='cyan', underline=True)}"
+    )
     if description := snippet.get("description"):
       desc = description[:100]
-      print(f"   Description: {desc}{'...' if len(description) > 100 else ''}")
-    print("-" * 80)
+      click.echo(f"   Description: {desc}{'...' if len(description) > 100 else ''}")
+    click.echo("-" * 80)
 
 
 def display_playlist_videos_with_durations(videos: list[EnhancedVideo]) -> None:
   """Display playlist videos with duration information in a formatted way."""
   if not videos:
-    print("No videos found in this playlist.")
+    click.echo("No videos found in this playlist.")
     return
 
-  print(f"\nFound {len(videos)} video(s) in playlist:")
-  print("-" * 90)
+  click.echo(
+    f"\nFound {click.style(str(len(videos)), fg='cyan', bold=True)} video(s) in playlist:"
+  )
+  click.echo("-" * 90)
 
   total_duration_seconds = 0
   for i, video in enumerate(videos, 1):
@@ -87,19 +132,47 @@ def display_playlist_videos_with_durations(videos: list[EnhancedVideo]) -> None:
     video_id = video["video_id"]
     duration = video["duration"]
 
-    print(f"{i}. Title: {snippet['title']}")
-    print(f"   Video ID: {video_id}")
-    print(
-      f"   Channel: {snippet.get('videoOwnerChannelTitle', snippet['channelTitle'])}"
+    # Color duration based on length
+    if duration != "Unknown" and ":" in duration:
+      try:
+        parts = duration.split(":")
+        duration_seconds = 0
+        if len(parts) == 2:  # MM:SS
+          duration_seconds = int(parts[0]) * 60 + int(parts[1])
+        elif len(parts) == 3:  # HH:MM:SS
+          duration_seconds = int(parts[0]) * 3600 + int(parts[1]) * 60 + int(parts[2])
+
+        # Color based on duration length
+        if duration_seconds < 60:  # Less than 1 minute
+          duration_color = "red"
+        elif duration_seconds < 600:  # Less than 10 minutes
+          duration_color = "yellow"
+        elif duration_seconds < 3600:  # Less than 1 hour
+          duration_color = "green"
+        else:  # 1 hour or more
+          duration_color = "cyan"
+      except ValueError:
+        duration_color = "white"
+    else:
+      duration_color = "white"
+
+    click.echo(
+      f"{click.style(f'{i}.', fg='blue', bold=True)} Title: {click.style(snippet['title'], fg='white', bold=True)}"
     )
-    print(f"   Duration: {duration}")
-    print(f"   Position: {snippet['position']}")
-    print(f"   Published: {snippet['publishedAt']}")
-    print(f"   URL: https://www.youtube.com/watch?v={video_id}")
+    click.echo(f"   Video ID: {click.style(video_id, fg='cyan')}")
+    click.echo(
+      f"   Channel: {click.style(snippet.get('videoOwnerChannelTitle', snippet['channelTitle']), fg='yellow')}"
+    )
+    click.echo(f"   Duration: {click.style(duration, fg=duration_color, bold=True)}")
+    click.echo(f"   Position: {click.style(str(snippet['position']), fg='magenta')}")
+    click.echo(f"   Published: {click.style(snippet['publishedAt'], fg='blue')}")
+    click.echo(
+      f"   URL: {click.style(f'https://www.youtube.com/watch?v={video_id}', fg='cyan', underline=True)}"
+    )
     if description := snippet.get("description"):
       desc = description[:100]
-      print(f"   Description: {desc}{'...' if len(description) > 100 else ''}")
-    print("-" * 90)
+      click.echo(f"   Description: {desc}{'...' if len(description) > 100 else ''}")
+    click.echo("-" * 90)
 
     # Try to calculate total duration (simple parsing for MM:SS format)
     if duration != "Unknown" and ":" in duration:
@@ -123,7 +196,9 @@ def display_playlist_videos_with_durations(videos: list[EnhancedVideo]) -> None:
       total_duration = f"{hours}:{minutes:02d}:{seconds:02d}"
     else:
       total_duration = f"{minutes}:{seconds:02d}"
-    print(f"\nTotal playlist duration: {total_duration}")
+    click.echo(
+      f"\n{click.style('Total playlist duration:', fg='green', bold=True)} {click.style(total_duration, fg='green', bold=True)}"
+    )
 
 
 # File output functions

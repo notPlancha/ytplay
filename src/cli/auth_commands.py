@@ -26,17 +26,25 @@ def login(force: bool) -> None:
   try:
     token_file = TOKEN_FILE
     if os.path.exists(token_file):
-      click.echo(f"🔑 Found existing credentials at: {token_file}")
+      click.echo(
+        f"🔑 Found existing credentials at: {click.style(token_file, fg='cyan')}"
+      )
       service = authenticate_youtube(force=force)
       if not force:  # Check if existing credentials are valid
-        click.echo("🔍 Checking existing YouTube API credentials...")
+        click.echo(
+          f"🔍 {click.style('Checking existing YouTube API credentials...', fg='yellow')}"
+        )
         playlists = get_playlists(service, max_results=1)
         if playlists is not None:
-          click.echo("✅ Authentication verified! Using cached credentials.")
+          click.echo(
+            f"✅ {click.style('Authentication verified! Using cached credentials.', fg='green', bold=True)}"
+          )
         else:
           click.echo("❌ Authentication failed or no access to playlists.")
     else:
-      click.echo("🔑 Starting YouTube API authentication flow...")
+      click.echo(
+        f"🔑 {click.style('Starting YouTube API authentication flow...', fg='cyan', bold=True)}"
+      )
       service = authenticate_youtube()
 
   except Exception as error:
@@ -49,17 +57,21 @@ def status() -> None:
   try:
     token_file = TOKEN_FILE
     if not os.path.exists(token_file):
-      click.echo("❌ Not authenticated. Run 'ytplay auth login' first.")
+      click.echo(
+        f"❌ {click.style('Not authenticated.', fg='red', bold=True)} Run {click.style('ytplay auth login', fg='cyan', bold=True)} first."
+      )
       return
 
-    click.echo("🔍 Checking authentication status...")
+    click.echo(f"🔍 {click.style('Checking authentication status...', fg='yellow')}")
     service = authenticate_youtube()
     playlists = get_playlists(service, max_results=1)
 
     if playlists is not None:
-      click.echo("✅ Authentication is valid.")
+      click.echo(f"✅ {click.style('Authentication is valid.', fg='green', bold=True)}")
     else:
-      click.echo("❌ Authentication failed. Try 'ytplay auth login --force'.")
+      click.echo(
+        f"❌ Authentication failed. Try {click.style('ytplay auth login --force', fg='cyan', bold=True)}."
+      )
 
   except Exception as error:
     click.echo(f"❌ Authentication check failed: {error}", err=True)
@@ -72,9 +84,11 @@ def logout() -> None:
     token_file = TOKEN_FILE
     if os.path.exists(token_file):
       os.remove(token_file)
-      click.echo("✅ Credentials removed successfully.")
+      click.echo(
+        f"✅ {click.style('Credentials removed successfully.', fg='green', bold=True)}"
+      )
     else:
-      click.echo("ℹ️  No stored credentials found.")
+      click.echo(f"ℹ️  {click.style('No stored credentials found.', fg='blue')}")
 
   except Exception as error:
     click.echo(f"❌ Failed to remove credentials: {error}", err=True)

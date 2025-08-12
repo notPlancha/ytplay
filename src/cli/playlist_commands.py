@@ -53,7 +53,7 @@ def list(output: str | None, format: TextOrJson) -> None:
   """List all your playlists."""
   try:
     service = get_authenticated_service()
-    click.echo("Retrieving your playlists...")
+    click.echo(f"📥 {click.style('Retrieving your playlists...', fg='cyan')}")
 
     playlists = get_playlists(service)
     if playlists is not None:
@@ -62,7 +62,9 @@ def list(output: str | None, format: TextOrJson) -> None:
           save_playlists_json(playlists, output)
         else:
           display_playlists_to_file(playlists, output)
-        click.echo(f"✅ Playlist information saved to: {output}")
+        click.echo(
+          f"✅ Playlist information saved to: {click.style(output, fg='green', underline=True)}"
+        )
       else:
         display_playlists(playlists)
     else:
@@ -81,7 +83,9 @@ def info(playlist_id: str | None, output: str | None, format: TextOrJson) -> Non
     service = get_authenticated_service()
     playlist_id = handle_playlist_id_or_select(service, playlist_id, "get info for")
 
-    click.echo(f"Retrieving info for playlist: {playlist_id}")
+    click.echo(
+      f"📥 {click.style(f'Retrieving info for playlist: {playlist_id}', fg='cyan')}"
+    )
     playlist_info = get_playlist_info(service, playlist_id)
 
     if playlist_info:
@@ -90,7 +94,9 @@ def info(playlist_id: str | None, output: str | None, format: TextOrJson) -> Non
           save_playlist_info_json(playlist_info, output)
         else:
           display_playlist_info_to_file(playlist_info, output)
-        click.echo(f"✅ Playlist summary saved to: {output}")
+        click.echo(
+          f"✅ Playlist summary saved to: {click.style(output, fg='green', underline=True)}"
+        )
       else:
         display_playlist_info(playlist_info)
     else:
@@ -121,7 +127,9 @@ def videos(
     playlist_id = handle_playlist_id_or_select(service, playlist_id, "list videos from")
 
     if durations:
-      click.echo(f"Retrieving videos with durations for playlist: {playlist_id}")
+      click.echo(
+        f"📥 {click.style(f'Retrieving videos with durations for playlist: {playlist_id}', fg='cyan')}"
+      )
       videos = get_playlist_videos_with_durations(
         service, playlist_id, show_progress=not no_progress, use_cache=not no_cache
       )
@@ -133,13 +141,17 @@ def videos(
               json.dump(videos, f, indent=2, ensure_ascii=False)
           else:
             display_playlist_videos_with_durations_to_file(videos, output)
-          click.echo(f"✅ Playlist videos with durations saved to: {output}")
+          click.echo(
+            f"✅ Playlist videos with durations saved to: {click.style(output, fg='green', underline=True)}"
+          )
         else:
           display_playlist_videos_with_durations(videos)
       else:
         click.echo("❌ Failed to retrieve playlist videos.", err=True)
     else:
-      click.echo(f"Retrieving videos for playlist: {playlist_id}")
+      click.echo(
+        f"📥 {click.style(f'Retrieving videos for playlist: {playlist_id}', fg='cyan')}"
+      )
       videos = get_playlist_videos(
         service, playlist_id, show_progress=not no_progress, use_cache=not no_cache
       )
@@ -150,7 +162,9 @@ def videos(
             save_playlist_videos_json(videos, output)
           else:
             display_playlist_videos_to_file(videos, output)
-          click.echo(f"✅ Playlist videos saved to: {output}")
+          click.echo(
+            f"✅ Playlist videos saved to: {click.style(output, fg='green', underline=True)}"
+          )
         else:
           display_playlist_videos(videos)
       else:
@@ -199,7 +213,7 @@ def sort(
 
     # Interactive sorting method selection if not provided
     if not sort_by:
-      click.echo("\nSelect sorting method:")
+      click.echo(f"\n{click.style('Select sorting method:', fg='cyan', bold=True)}")
       sorting_options = [
         ("upload_date", "Sort by upload/publish date"),
         ("duration", "Sort by video duration"),
@@ -209,7 +223,7 @@ def sort(
       ]
 
       for i, (key, description) in enumerate(sorting_options, 1):
-        click.echo(f"{i}. {description}")
+        click.echo(f"{click.style(f'{i}.', fg='blue', bold=True)} {description}")
 
       try:
         sort_idx = click.prompt(
@@ -226,10 +240,16 @@ def sort(
 
     sort_criteria = cast(SortCriteria, sort_by)
 
-    click.echo("\n📋 Creating sorted playlist...")
-    click.echo(f"   Sort by: {sort_criteria}")
-    click.echo(f"   Order: {'Descending' if reverse else 'Ascending'}")
-    click.echo(f"   Privacy: {privacy_status}")
+    click.echo(
+      f"\n📋 {click.style('Creating sorted playlist...', fg='cyan', bold=True)}"
+    )
+    click.echo(f"   Sort by: {click.style(sort_criteria, fg='yellow', bold=True)}")
+    click.echo(
+      f"   Order: {click.style('Descending' if reverse else 'Ascending', fg='magenta', bold=True)}"
+    )
+    click.echo(
+      f"   Privacy: {click.style(privacy_status, fg='green' if privacy_status == 'public' else 'red' if privacy_status == 'private' else 'yellow', bold=True)}"
+    )
 
     new_playlist_id = create_sorted_playlist(
       service=service,
@@ -243,9 +263,13 @@ def sort(
     )
 
     if new_playlist_id:
-      click.echo("\n✅ Successfully created sorted playlist!")
-      click.echo(f"   New playlist ID: {new_playlist_id}")
-      click.echo(f"   URL: https://www.youtube.com/playlist?list={new_playlist_id}")
+      click.echo(
+        f"\n✅ {click.style('Successfully created sorted playlist!', fg='green', bold=True)}"
+      )
+      click.echo(f"   New playlist ID: {click.style(new_playlist_id, fg='cyan')}")
+      click.echo(
+        f"   URL: {click.style(f'https://www.youtube.com/playlist?list={new_playlist_id}', fg='cyan', underline=True)}"
+      )
     else:
       click.echo(
         "\n❌ Failed to create sorted playlist or process was terminated.", err=True
