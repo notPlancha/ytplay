@@ -4,6 +4,9 @@ youtube.dat
 temp.*
 *.temp
 
+# Cache directory
+config/cache/
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[codz]

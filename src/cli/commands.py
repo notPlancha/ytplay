@@ -8,6 +8,7 @@ import click
 
 from ..config import TOKEN_FILE
 from ..core.auth import authenticate_youtube
+from ..core.cache import clear_cache, get_cache_stats, format_cache_size
 from ..core.youtube_api import (
   create_sorted_playlist,
   delete_playlist,
@@ -49,15 +50,18 @@ def cli() -> None:
   - playlist-summary: Get summary info for a playlist
     Flags: --output/-o (Output to file), --format/-f (text/json format)
   - list-videos: List all videos in a playlist
-    Flags: --output/-o (Output to file), --format/-f (text/json format), --no-progress (Disable progress tracking)
+    Flags: --output/-o (Output to file), --format/-f (text/json format), --no-progress (Disable progress tracking), --no-cache (Skip cache and fetch fresh data)
   - list-videos-with-durations: List videos with duration information
-    Flags: --output/-o (Output to file), --format/-f (text/json format), --no-progress (Disable progress tracking)
+    Flags: --output/-o (Output to file), --format/-f (text/json format), --no-progress (Disable progress tracking), --no-cache (Skip cache and fetch fresh data)
   - create-sorted-playlist: Create a sorted copy of an existing playlist
     Flags: --sort-by/-s (upload_date/duration/title/channel/position, or interactive selection if omitted), --reverse/-r (Sort descending),
            --title/-t (Custom playlist title), --privacy/-p (private/public/unlisted),
-           --no-progress (Disable progress tracking)
+           --no-progress (Disable progress tracking), --no-cache (Skip cache and fetch fresh data)
   - delete-playlist: Delete a playlist
     Flags: --force (Skip confirmation prompt)
+  - cache-info: Show cache statistics
+  - clear-cache: Clear cached playlist data
+    Flags: --type/-t (Specific cache type to clear: playlist/videos/videos_durations)
   """
   pass
 
@@ -181,8 +185,9 @@ def playlist_summary(
   help="Output format (text or json)",
 )
 @click.option("--no-progress", is_flag=True, help="Disable progress tracking")
+@click.option("--no-cache", is_flag=True, help="Skip cache and fetch fresh data")
 def list_videos(
-  playlist_id: str | None, output: str | None, format: TextOrJson, no_progress: bool
+  playlist_id: str | None, output: str | None, format: TextOrJson, no_progress: bool, no_cache: bool
 ) -> None:
   """List all videos in a playlist by ID, or choose from your playlists interactively."""
   try:
@@ -206,7 +211,7 @@ def list_videos(
       playlist_id = playlists[idx - 1]["id"]
     print(f"Retrieving videos for playlist: {playlist_id}")
     assert playlist_id is not None  # We ensure this above
-    videos = get_playlist_videos(service, playlist_id, show_progress=not no_progress)
+    videos = get_playlist_videos(service, playlist_id, show_progress=not no_progress, use_cache=not no_cache)
     if videos is not None:
       if output:
         if format == "json":
@@ -233,8 +238,9 @@ def list_videos(
   help="Output format (text or json)",
 )
 @click.option("--no-progress", is_flag=True, help="Disable progress tracking")
+@click.option("--no-cache", is_flag=True, help="Skip cache and fetch fresh data")
 def list_videos_with_durations(
-  playlist_id: str | None, output: str | None, format: TextOrJson, no_progress: bool
+  playlist_id: str | None, output: str | None, format: TextOrJson, no_progress: bool, no_cache: bool
 ) -> None:
   """List all videos in a playlist with duration information."""
   try:
@@ -259,7 +265,7 @@ def list_videos_with_durations(
     print(f"Retrieving videos with durations for playlist: {playlist_id}")
     assert playlist_id is not None  # We ensure this above
     videos = get_playlist_videos_with_durations(
-      service, playlist_id, show_progress=not no_progress
+      service, playlist_id, show_progress=not no_progress, use_cache=not no_cache
     )
     if videos is not None:
       if output:
@@ -297,6 +303,7 @@ def list_videos_with_durations(
   help="Privacy setting for the new playlist",
 )
 @click.option("--no-progress", is_flag=True, help="Disable progress tracking")
+@click.option("--no-cache", is_flag=True, help="Skip cache and fetch fresh data")
 def create_sorted_playlist_cmd(
   playlist_id: str | None,
   sort_by: str | None,
@@ -304,6 +311,7 @@ def create_sorted_playlist_cmd(
   title: str | None,
   privacy: str,
   no_progress: bool,
+  no_cache: bool,
 ) -> None:
   """Create a new sorted playlist from an existing playlist."""
   try:
@@ -373,6 +381,7 @@ def create_sorted_playlist_cmd(
       new_playlist_title=title,
       privacy_status=privacy_status,
       show_progress=not no_progress,
+      use_cache=not no_cache,
     )
 
     if new_playlist_id:
@@ -447,5 +456,58 @@ def delete_playlist_cmd(playlist_id: str | None, force: bool) -> None:
     else:
       print("❌ Failed to delete playlist.")
 
+  except Exception as error:
+    print(f"An error occurred: {error}")
+
+
+@cli.command()
+def cache_info() -> None:
+  """Show cache statistics."""
+  try:
+    stats = get_cache_stats()
+    total_size = format_cache_size(stats["total_size_bytes"])
+    
+    print(f"📊 Cache Statistics:")
+    print(f"  Total files: {stats['total_files']}")
+    print(f"  Total size: {total_size}")
+    print(f"  Playlist data: {stats['playlist']} files")
+    print(f"  Video lists: {stats['videos']} files")
+    print(f"  Videos with durations: {stats['videos_durations']} files")
+    
+    if stats["total_files"] == 0:
+      print("  (Cache is empty)")
+    
+  except Exception as error:
+    print(f"An error occurred: {error}")
+
+
+@cli.command()
+@click.option(
+  "--type", 
+  "-t", 
+  type=click.Choice(["playlist", "videos", "videos_durations"], case_sensitive=False),
+  help="Specific cache type to clear (if omitted, clears all cache)"
+)
+def clear_cache_cmd(type: str | None) -> None:
+  """Clear cached playlist data."""
+  try:
+    # Get stats before clearing
+    stats_before = get_cache_stats()
+    
+    if stats_before["total_files"] == 0:
+      print("Cache is already empty.")
+      return
+    
+    # Clear the cache
+    removed_count = clear_cache(type)
+    
+    if removed_count > 0:
+      if type:
+        print(f"✓ Cleared {removed_count} {type} cache files.")
+      else:
+        print(f"✓ Cleared all {removed_count} cache files.")
+    else:
+      print("No cache files were removed.")
+    
   except Exception as error:
     print(f"An error occurred: {error}")

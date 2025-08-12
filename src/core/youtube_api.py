@@ -14,6 +14,7 @@ from ..types.youtube import (
   YouTubeService,
 )
 from .sorting import get_video_durations, sort_videos_by_criteria
+from .cache import get_cached_data, save_cached_data
 
 
 def create_playlist(
@@ -220,8 +221,18 @@ def get_playlist_videos(
   playlist_id: str,
   max_results: int = 50,
   show_progress: bool = True,
+  use_cache: bool = True,
 ) -> list[PlaylistItem] | None:
   """Retrieve all videos from a playlist."""
+  
+  # Check cache first if enabled
+  if use_cache:
+    cached_videos = get_cached_data("videos", playlist_id)
+    if cached_videos is not None:
+      if show_progress:
+        print(f"✓ Loaded {len(cached_videos)} videos from cache")
+      return cached_videos
+  
   videos: list[PlaylistItem] = []
   next_page_token: str | None = None
   page_count = 0
@@ -301,6 +312,12 @@ def get_playlist_videos(
       pbar.set_description(f"✓ Completed ({page_count} pages, {elapsed:.1f}s)")
       pbar.close()
 
+    # Save to cache if enabled
+    if use_cache and videos:
+      if save_cached_data("videos", playlist_id, videos):
+        if show_progress:
+          print(f"✓ Cached {len(videos)} videos for future use")
+
   except HttpError as error:
     if pbar:
       pbar.set_description("✗ Error occurred")
@@ -316,8 +333,18 @@ def get_playlist_videos_with_durations(
   playlist_id: str,
   max_results: int = 50,
   show_progress: bool = True,
+  use_cache: bool = True,
 ) -> list[EnhancedVideo] | None:
   """Retrieve all videos from a playlist with duration information."""
+  
+  # Check cache first if enabled
+  if use_cache:
+    cached_videos = get_cached_data("videos_durations", playlist_id)
+    if cached_videos is not None:
+      if show_progress:
+        print(f"✓ Loaded {len(cached_videos)} videos with durations from cache")
+      return cached_videos
+  
   videos: list[EnhancedVideo] = []
   next_page_token: str | None = None
   page_count = 0
@@ -413,6 +440,12 @@ def get_playlist_videos_with_durations(
       pbar.set_description(f"✓ Completed ({page_count} pages, {elapsed:.1f}s)")
       pbar.close()
 
+    # Save to cache if enabled
+    if use_cache and videos:
+      if save_cached_data("videos_durations", playlist_id, videos):
+        if show_progress:
+          print(f"✓ Cached {len(videos)} videos with durations for future use")
+
   except HttpError as error:
     if pbar:
       pbar.set_description("✗ Error occurred")
@@ -431,6 +464,7 @@ def create_sorted_playlist(
   new_playlist_title: str | None = None,
   privacy_status: PrivacyStatus = "private",
   show_progress: bool = True,
+  use_cache: bool = True,
 ) -> str | None:
   """Create a new sorted playlist from an existing playlist."""
 
@@ -452,13 +486,13 @@ def create_sorted_playlist(
     # Need duration data for sorting by duration
     print("Fetching videos with durations from source playlist...")
     videos = get_playlist_videos_with_durations(
-      service, source_playlist_id, show_progress=show_progress
+      service, source_playlist_id, show_progress=show_progress, use_cache=use_cache
     )
   else:
     # Regular video data is sufficient
     print("Fetching videos from source playlist...")
     regular_videos = get_playlist_videos(
-      service, source_playlist_id, show_progress=show_progress
+      service, source_playlist_id, show_progress=show_progress, use_cache=use_cache
     )
     if regular_videos:
       # Convert to the enhanced format expected by sorting function

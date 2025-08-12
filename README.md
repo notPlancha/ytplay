@@ -114,6 +114,7 @@ python main.py delete-playlist [PLAYLIST_ID]
 - `--output/-o`: Save output to a file
 - `--format/-f`: Choose output format (text or json)
 - `--no-progress`: Disable progress bars
+- `--no-cache`: Skip cache and fetch fresh data from YouTube API
 - Use `--help` with any command for detailed options
 
 ### Finding Playlist IDs
@@ -140,6 +141,7 @@ sort-wl/
 │   ├── core/                  # Core business logic
 │   │   ├── __init__.py
 │   │   ├── auth.py           # YouTube API authentication
+│   │   ├── cache.py          # Cache management system
 │   │   ├── youtube_api.py    # YouTube API functions
 │   │   └── sorting.py        # Video sorting utilities
 │   ├── types/                 # Type definitions
@@ -152,14 +154,18 @@ sort-wl/
 │   └── __init__.py
 ├── config/                    # Configuration files
 │   ├── client_secrets.json   # OAuth client credentials
-│   └── youtube.dat           # Cached authentication tokens
+│   ├── youtube.dat           # Cached authentication tokens
+│   └── cache/                # Playlist cache directory
 └── README.md
 ```
 
 ### Module Overview
 
 - **`src/cli/`** - Command-line interface using Click framework
-- **`src/core/`** - Core functionality (authentication, API calls, sorting)
+- **`src/core/`** - Core functionality (authentication, API calls, sorting, caching)
 - **`src/types/`** - TypedDict definitions for API responses and internal data
 - **`src/output/`** - Functions for displaying and saving data
-- **`config/`** - Configuration and credential files (OAuth credentials, cached tokens)
+- **`config/`** - Configuration and credential files (OAuth credentials, cached tokens, cache storage)
+
+## TODO
+- [ ] Make sorting resumable
