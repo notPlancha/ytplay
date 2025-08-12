@@ -30,14 +30,19 @@ A Python CLI tool to interact with the YouTube API and manage playlist informati
    - Go to APIs & Services > OAuth consent screen
    - Add your Gmail address as a test user
 
-Then just clone it and run
+### Installation
 
 ```bash
 git clone https://github.com/notPlancha/sort-yt-playlist.git
 cd sort-yt-playlist
-uv sync --dev
-uv run main.py create-sorted-playlist
+uv sync
 ```
+
+After installation, you can use either:
+- `ytplay` (recommended - direct command)
+- `python main.py` (development/fallback)
+
+> **Note**: The `ytplay` command is available globally after running `uv sync`.
 
 ### Troubleshooting
 
@@ -60,62 +65,80 @@ uv run main.py create-sorted-playlist
 
 ## Usage
 
-### Quick-start
+### Quick Start
 
 ```bash
+# First time setup
+ytplay auth login
+
 # List all your playlists
-python main.py list-playlists
+ytplay playlist list
 
-# Get detailed info about a specific playlist
-python main.py playlist-summary PLAYLIST_ID_HERE
+# Get detailed info about a playlist
+ytplay playlist info PLAYLIST_ID_HERE
 
-# List all videos in a playlist with their durations
-python main.py list-videos-with-durations PLAYLIST_ID_HERE
+# List videos with durations 
+ytplay playlist videos PLAYLIST_ID_HERE --durations
+
+# Create a sorted playlist
+ytplay playlist sort PLAYLIST_ID_HERE --sort-by duration --reverse
 ```
 
-### Available Commands
+### Command Reference
 
-**See available commands**
+**Authentication:**
 ```bash
-python main.py --help
+ytplay auth login                    # Authenticate with YouTube
+ytplay auth login --force            # Force reauthentication  
+ytplay auth status                   # Check authentication status
+ytplay auth logout                   # Remove stored credentials
 ```
 
-**List your playlists:**
+**Playlist Management:**
 ```bash
-python main.py list-playlists
+ytplay playlist list                 # List all your playlists
+ytplay playlist info [PLAYLIST_ID]  # Get detailed playlist info
+ytplay playlist videos [PLAYLIST_ID]         # List videos in playlist
+ytplay playlist videos [PLAYLIST_ID] -d     # List videos with durations
+ytplay playlist sort [PLAYLIST_ID]  # Create sorted playlist copy
+ytplay playlist delete [PLAYLIST_ID]        # Delete a playlist
 ```
 
-**Get playlist summary:**
+**Cache Management:**
 ```bash
-python main.py playlist-summary [PLAYLIST_ID]
+ytplay cache info                    # Show cache statistics
+ytplay cache clear                   # Clear all cached data
+ytplay cache clear --type videos    # Clear specific cache type
 ```
 
-**List videos in a playlist:**
-```bash
-python main.py list-videos [PLAYLIST_ID]
-```
+### Command Options
 
-**List videos with durations:**
-```bash
-python main.py list-videos-with-durations [PLAYLIST_ID]
-```
-
-**Create a sorted copy of a playlist:**
-```bash
-python main.py create-sorted-playlist [PLAYLIST_ID] --sort-by duration --reverse
-```
-
-**Delete a playlist:**
-```bash
-python main.py delete-playlist [PLAYLIST_ID]
-```
-
-### Options
-- `--output/-o`: Save output to a file
-- `--format/-f`: Choose output format (text or json)
+**Common Options:**
+- `--output/-o FILE`: Save output to file
+- `--format/-f FORMAT`: Choose output format (text/json)
 - `--no-progress`: Disable progress bars
-- `--no-cache`: Skip cache and fetch fresh data from YouTube API
-- Use `--help` with any command for detailed options
+- `--no-cache`: Skip cache and fetch fresh data
+
+**Sort Options:**
+- `--sort-by/-s CRITERIA`: Sort by upload_date, duration, title, channel, or position
+- `--reverse/-r`: Sort in descending order
+- `--title/-t TITLE`: Custom title for sorted playlist
+- `--privacy/-p LEVEL`: Set privacy (private/public/unlisted)
+
+**Examples:**
+```bash
+# Interactive playlist selection (if PLAYLIST_ID omitted)
+ytplay playlist videos
+
+# Save playlist info as JSON
+ytplay playlist info PLxxx --output playlist.json --format json
+
+# Create reverse-sorted playlist by duration
+ytplay playlist sort PLxxx --sort-by duration --reverse --title "My Sorted Playlist"
+
+# List videos with durations, skip cache
+ytplay playlist videos PLxxx --durations --no-cache
+```
 
 ### Finding Playlist IDs
 
@@ -125,7 +148,7 @@ To use commands that require a `[PLAYLIST_ID]`:
    - Example: `https://www.youtube.com/playlist?list=PLrAXtmRdnEQy6pNQS_rCH0jEIu23_v5wY`
    - Playlist ID: `PLrAXtmRdnEQy6pNQS_rCH0jEIu23_v5wY`
 
-2. **Using this tool**: Run `python main.py list-playlists` to see all your playlists with their IDs
+2. **Using this tool**: Run `ytplay playlist list` to see all your playlists with their IDs
 
 ## Project Structure
 
@@ -161,7 +184,11 @@ sort-wl/
 
 ### Module Overview
 
-- **`src/cli/`** - Command-line interface using Click framework
+- **`src/cli/`** - Modular command-line interface using Click framework
+  - `auth_commands.py` - Authentication commands (login, logout, status)
+  - `playlist_commands.py` - Playlist management commands 
+  - `cache_commands.py` - Cache management commands
+  - `common.py` - Shared utilities and option groups
 - **`src/core/`** - Core functionality (authentication, API calls, sorting, caching)
 - **`src/types/`** - TypedDict definitions for API responses and internal data
 - **`src/output/`** - Functions for displaying and saving data

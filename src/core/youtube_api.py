@@ -13,8 +13,8 @@ from ..types.youtube import (
   SortCriteria,
   YouTubeService,
 )
-from .sorting import get_video_durations, sort_videos_by_criteria
 from .cache import get_cached_data, save_cached_data
+from .sorting import get_video_durations, sort_videos_by_criteria
 
 
 def create_playlist(
@@ -224,7 +224,7 @@ def get_playlist_videos(
   use_cache: bool = True,
 ) -> list[PlaylistItem] | None:
   """Retrieve all videos from a playlist."""
-  
+
   # Check cache first if enabled
   if use_cache:
     cached_videos = get_cached_data("videos", playlist_id)
@@ -232,7 +232,7 @@ def get_playlist_videos(
       if show_progress:
         print(f"✓ Loaded {len(cached_videos)} videos from cache")
       return cached_videos
-  
+
   videos: list[PlaylistItem] = []
   next_page_token: str | None = None
   page_count = 0
@@ -336,7 +336,7 @@ def get_playlist_videos_with_durations(
   use_cache: bool = True,
 ) -> list[EnhancedVideo] | None:
   """Retrieve all videos from a playlist with duration information."""
-  
+
   # Check cache first if enabled
   if use_cache:
     cached_videos = get_cached_data("videos_durations", playlist_id)
@@ -344,7 +344,7 @@ def get_playlist_videos_with_durations(
       if show_progress:
         print(f"✓ Loaded {len(cached_videos)} videos with durations from cache")
       return cached_videos
-  
+
   videos: list[EnhancedVideo] = []
   next_page_token: str | None = None
   page_count = 0

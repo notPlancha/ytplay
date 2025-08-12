@@ -1,5 +1,9 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
 [project]
-name = "sort-playlist-yt"
+name = "ytplay"
 version = "1.0.0-dev"
 description = "A Python CLI tool to interact with the YouTube API and mainly to manage and sort playlists"
 readme = "README.md"
@@ -11,6 +15,12 @@ dependencies = [
   "google-auth-oauthlib>=1.2.2",
   "tqdm>=4.67.1", # Copyright (c) 2013 noamraph, MIT License
 ]
+
+[project.scripts]
+ytplay = "src.cli:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src"]
 
 [dependency-groups]
 dev = [

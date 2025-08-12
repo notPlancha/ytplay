@@ -1,6 +1,11 @@
-"""YouTube Playlist CLI Tool - Main Entry Point"""
+"""YouTube Playlist CLI Tool - Main Entry Point
 
-from src.cli import cli
+This file provides backwards compatibility for running the tool directly.
+In production, use: ytplay [command]
+For development: python main.py [command]
+"""
+
+from src.cli import main
 
 if __name__ == "__main__":
-  cli()
+  main()
