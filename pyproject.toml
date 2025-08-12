@@ -10,6 +10,7 @@ dependencies = [
   "google-auth-httplib2>=0.2.0",
   "google-auth-oauthlib>=1.2.2",
   "pyprojroot>=0.3.0",
+  "tqdm>=4.67.1",
 ]
 
 [dependency-groups]
