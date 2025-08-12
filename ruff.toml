@@ -1,0 +1,35 @@
+# Ruff configuration file
+# Docs: https://docs.astral.sh/ruff/configuration/
+
+line-length = 88
+indent-width = 2
+
+# Assume Python 3.13
+target-version = "py313"
+
+[lint]
+# Enable Pyflakes (`F`) and a subset of the pycodestyle (`E`) codes by default.
+# Also enable some additional useful rules
+select = [
+    "E4",   # Import errors
+    "E7",   # Statement errors  
+    "E9",   # Runtime errors
+    "F",    # Pyflakes
+    "W",    # Warning
+    "I",    # isort (import sorting)
+    "UP",   # pyupgrade (modernize code)
+]
+ignore = []
+
+# Allow fix for all enabled rules (when `--fix`) is provided.
+fixable = ["ALL"]
+unfixable = []
+
+# Allow unused variables when underscore-prefixed.
+dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
+
+[format]
+quote-style = "double"
+indent-style = "space"
+skip-magic-trailing-comma = false
+line-ending = "auto"

@@ -1,0 +1,19 @@
+[project]
+name = "sort-playlist-yt"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+  "click>=8.2.1",
+  "google-api-python-client>=2.178.0",
+  "google-auth-httplib2>=0.2.0",
+  "google-auth-oauthlib>=1.2.2",
+  "pyprojroot>=0.3.0",
+]
+
+[dependency-groups]
+dev = [
+  "ipykernel>=6.30.1",
+  "ruff>=0.8.0",
+]
