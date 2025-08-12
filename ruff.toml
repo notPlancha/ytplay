@@ -18,6 +18,7 @@ select = [
     "W",    # Warning
     "I",    # isort (import sorting)
     "UP",   # pyupgrade (modernize code)
+    "ANN",  # Type annotations
 ]
 ignore = []
 
