@@ -1,7 +1,7 @@
 [project]
 name = "sort-playlist-yt"
-version = "0.1.0"
-description = "Add your description here"
+version = "1.0.0-dev"
+description = "A Python CLI tool to interact with the YouTube API and mainly to manage and sort playlists"
 readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
@@ -9,12 +9,10 @@ dependencies = [
   "google-api-python-client>=2.178.0",
   "google-auth-httplib2>=0.2.0",
   "google-auth-oauthlib>=1.2.2",
-  "pyprojroot>=0.3.0",
-  "tqdm>=4.67.1",
+  "tqdm>=4.67.1", # Copyright (c) 2013 noamraph, MIT License
 ]
 
 [dependency-groups]
 dev = [
-  "ipykernel>=6.30.1",
   "ruff>=0.8.0",
 ]

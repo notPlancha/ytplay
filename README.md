@@ -1,22 +1,81 @@
-# sort-wl
+# sort-playlist-yt
 
-A Python CLI tool to interact with the YouTube API and manage playlist information. Create sorted copies of playlists, list videos with durations, and more!
+A Python CLI tool to interact with the YouTube API and manage playlist information. Created to sort playlists by video time, but it has more stuff too.
 
 ## Setup
 
-1. Create OAuth client credentials in Google Cloud Console
-2. Add yourself as test user: https://console.cloud.google.com/auth/audience
-3. Install dependencies: `uv sync --dev`
+### Prerequisites
+
+- Python 3.13 or higher
+- [uv package manager](https://docs.astral.sh/uv/getting-started/installation/) (recommended) or pip
+
+
+### Set Up Google API Credentials
+
+1. **Create a Google Cloud Project**:
+   - Go to [Google Cloud Console](https://console.cloud.google.com/)
+   - Create a new project
+
+2. **Enable YouTube Data API v3**:
+   - Go to APIs & Services > Library
+   - Search for "YouTube Data API v3" and enable it
+
+3. **Create OAuth 2.0 Credentials**:
+   - Go to APIs & Services > Credentials
+   - Create OAuth client ID (Desktop application)
+   - Download the JSON file and rename it to `client_secrets.json`
+   - Place it in the `config/` folder
+
+4. **Add Test User** (Important):
+   - Go to APIs & Services > OAuth consent screen
+   - Add your Gmail address as a test user
+
+Then just clone it and run
+
+```bash
+git clone https://github.com/notPlancha/sort-yt-playlist.git
+cd sort-yt-playlist
+uv sync --dev
+uv run main.py create-sorted-playlist
+```
+
+### Troubleshooting
+
+**Error: "client_secrets.json not found"**
+- Make sure you've downloaded and renamed the OAuth credentials file
+- Verify it's placed in the `config/` folder: `config/client_secrets.json`
+
+**Error: "Access blocked: This app's request is invalid"**
+- Make sure you've added your Gmail address as a test user in the OAuth consent screen
+- Verify you're using the same Google account that you added as a test user
+
+**Error: "The OAuth client was not found"**
+- Double-check that you've enabled the YouTube Data API v3 in your Google Cloud project
+- Make sure you're using the correct Google Cloud project
+
+
 
 ## Usage
 
-### Authentication
-First, authenticate with YouTube:
+### Quick-start
+
 ```bash
-python main.py login
+# List all your playlists
+python main.py list-playlists
+
+# Get detailed info about a specific playlist
+python main.py playlist-summary PLAYLIST_ID_HERE
+
+# List all videos in a playlist with their durations
+python main.py list-videos-with-durations PLAYLIST_ID_HERE
 ```
 
 ### Available Commands
+
+**See available commands**
+```bash
+python main.py --help
+```
 
 **List your playlists:**
 ```bash
@@ -54,6 +113,16 @@ python main.py delete-playlist [PLAYLIST_ID]
 - `--no-progress`: Disable progress bars
 - Use `--help` with any command for detailed options
 
+### Finding Playlist IDs
+
+To use commands that require a `[PLAYLIST_ID]`:
+
+1. **From YouTube URL**: Copy the playlist ID from the URL
+   - Example: `https://www.youtube.com/playlist?list=PLrAXtmRdnEQy6pNQS_rCH0jEIu23_v5wY`
+   - Playlist ID: `PLrAXtmRdnEQy6pNQS_rCH0jEIu23_v5wY`
+
+2. **Using this tool**: Run `python main.py list-playlists` to see all your playlists with their IDs
+
 ## Project Structure
 
 The project is organized into a clean, modular structure:
@@ -79,8 +148,7 @@ sort-wl/
 │   ├── config.py             # Configuration and paths
 │   └── __init__.py
 ├── config/                    # Configuration files
-│   └── client_secrets.json   # OAuth client credentials
-├── data/                      # Runtime data files
+│   ├── client_secrets.json   # OAuth client credentials
 │   └── youtube.dat           # Cached authentication tokens
 └── README.md
 ```
@@ -91,42 +159,4 @@ sort-wl/
 - **`src/core/`** - Core functionality (authentication, API calls, sorting)
 - **`src/types/`** - TypedDict definitions for API responses and internal data
 - **`src/output/`** - Functions for displaying and saving data
-- **`config/`** - Configuration files (OAuth credentials)
-- **`data/`** - Runtime data (cached tokens)
-
-## Development
-
-This project uses [Ruff](https://docs.astral.sh/ruff/) for code formatting and linting.
-
-### Code Quality Commands
-
-```bash
-# Format code
-.\ruff.bat format
-
-# Lint and auto-fix issues
-.\ruff.bat lint
-
-# Check for linting issues (without fixing)
-.\ruff.bat check
-```
-
-Or use Ruff directly:
-```bash
-# Format all Python files
-.venv\Scripts\ruff.exe format .
-
-# Check and fix linting issues
-.venv\Scripts\ruff.exe check . --fix
-
-# Just check for issues
-.venv\Scripts\ruff.exe check .
-```
-
-## Configuration
-
-Ruff configuration is in `.ruff.toml` and includes:
-- Code formatting (similar to Black)
-- Import sorting (isort)
-- Modern Python syntax upgrades
-- Error detection and warnings
+- **`config/`** - Configuration and credential files (OAuth credentials, cached tokens)

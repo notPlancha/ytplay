@@ -1,1 +1,0 @@
-uv run main.py list-videos -o temp.txt -f text
