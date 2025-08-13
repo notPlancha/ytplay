@@ -202,10 +202,6 @@ sort-wl/
 │   │   └── formatters.py     # Display and file output functions
 │   ├── config.py             # Configuration and paths
 │   └── __init__.py
-├── config/                    # Configuration files
-│   ├── client_secrets.json   # OAuth client credentials (legacy location)
-│   ├── youtube.dat           # Cached authentication tokens (legacy location)
-│   └── cache/                # Playlist cache directory
 └── README.md
 ```
 
