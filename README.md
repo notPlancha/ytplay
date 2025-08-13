@@ -177,16 +177,6 @@ ytplay playlist sort PLxxx --sort-by duration --reverse --title "My Sorted Playl
 ytplay playlist videos PLxxx --durations --no-cache
 ```
 
-### Finding Playlist IDs
-
-To use commands that require a `[PLAYLIST_ID]`:
-
-1. **From YouTube URL**: Copy the playlist ID from the URL
-   - Example: `https://www.youtube.com/playlist?list=PLrAXtmRdnEQy6pNQS_rCH0jEIu23_v5wY`
-   - Playlist ID: `PLrAXtmRdnEQy6pNQS_rCH0jEIu23_v5wY`
-
-2. **Using this tool**: Run `ytplay playlist list` to see all your playlists with their IDs
-
 ## Project Structure
 
 The project is organized into a clean, modular structure:
