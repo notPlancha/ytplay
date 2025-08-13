@@ -26,11 +26,56 @@ uvx ytplay playlist sort
    - Go to APIs & Services > Credentials
    - Create OAuth client ID (Desktop application)
    - Download the JSON file and rename it to `client_secrets.json`
-   - Place it in the `config/` folder
+   - Use `ytplay auth config add /path/to/client_secrets.json` to copy it to the config directory
 
 4. **Add Test User** (Important):
    - Go to APIs & Services > OAuth consent screen
    - Add your Gmail address as a test user
+
+## Configuration
+
+The tool supports flexible configuration through environment variables and command-line options:
+
+### File Locations
+
+**Default locations:**
+- Config directory: Platform-specific application data directory:
+  - Windows: `%APPDATA%\ytplay\` (e.g., `C:\Users\Username\AppData\Roaming\ytplay\`)
+  - Linux: `~/.config/ytplay/` (or `$XDG_CONFIG_HOME/ytplay/` if set)
+  - macOS: `~/.config/ytplay/` (or `$XDG_CONFIG_HOME/ytplay/` if set)
+- Client secrets: `<config_dir>/client_secrets.json`
+- Token file: `<config_dir>/youtube.dat`
+
+**Environment Variables:**
+```bash
+export YTPLAY_CONFIG_DIR="/path/to/config"              # Set config directory
+export YTPLAY_CLIENT_SECRETS="/path/to/secrets.json"    # Set client secrets path
+export YTPLAY_TOKEN_FILE="/path/to/token.dat"           # Set token file path
+```
+
+**Command-line Options:**
+```bash
+ytplay --config-dir /path/to/config playlist list           # Set config directory
+ytplay --client-secrets /path/to/secrets.json auth login    # Set client secrets path
+ytplay --token-file /path/to/token.dat auth status         # Set token file path
+```
+
+**Check Current Configuration:**
+```bash
+ytplay auth config show    # Show current file locations and status
+```
+
+**Add Configuration Files:**
+```bash
+ytplay auth config add /path/to/client_secrets.json    # Copy client secrets to config directory
+ytplay auth config add /path/to/file.json --name custom.json  # Copy with custom name
+ytplay auth config add /path/to/file.json --force      # Overwrite existing file
+```
+
+**Configuration Priority:**
+1. Command-line options (highest priority)
+2. Environment variables  
+3. Default locations (lowest priority)
 
 ### Troubleshooting
 
@@ -82,6 +127,8 @@ ytplay auth login                    # Authenticate with YouTube
 ytplay auth login --force            # Force reauthentication  
 ytplay auth status                   # Check authentication status
 ytplay auth logout                   # Remove stored credentials
+ytplay auth config show             # Show current configuration paths
+ytplay auth config add <path>       # Copy configuration file to config directory
 ```
 
 **Playlist Management:**
@@ -166,8 +213,8 @@ sort-wl/
 │   ├── config.py             # Configuration and paths
 │   └── __init__.py
 ├── config/                    # Configuration files
-│   ├── client_secrets.json   # OAuth client credentials
-│   ├── youtube.dat           # Cached authentication tokens
+│   ├── client_secrets.json   # OAuth client credentials (legacy location)
+│   ├── youtube.dat           # Cached authentication tokens (legacy location)
 │   └── cache/                # Playlist cache directory
 └── README.md
 ```
