@@ -23,36 +23,21 @@ def _load_credentials(
 ) -> oauth2Credentials | externalCredentials | None:
   """Load credentials from a token file if it exists."""
   if os.path.exists(token_file):
-    with open(token_file) as f:
-      token_data: dict[str, object] = json.load(f)
-    return oauth2Credentials(
-      token=token_data.get("access_token"),
-      refresh_token=token_data.get("refresh_token"),
-      token_uri=token_data.get("token_uri", "https://oauth2.googleapis.com/token"),
-      client_id=token_data.get("client_id"),
-      client_secret=token_data.get("client_secret"),
-      scopes=SCOPES,
-    )
+    oauth2Credentials.from_authorized_user_file(token_file, SCOPES)
   return None
 
 
 def _refresh_credentials(
   creds: oauth2Credentials | externalCredentials, token_file: str
-) -> oauth2Credentials | externalCredentials | None:
+) -> oauth2Credentials | externalCredentials:
   """Refresh credentials if possible and save them."""
   try:
     creds.refresh(Request())
-    with open(token_file) as f:
-      existing_data: dict[str, object] = json.load(f)
-    existing_data["access_token"] = creds.token
-    if hasattr(creds, "expiry") and creds.expiry:
-      existing_data["token_expiry"] = creds.expiry.isoformat() + "Z"
-    with open(token_file, "w") as f:
-      json.dump(existing_data, f, indent=2)
+    _save_credentials(creds, token_file, replace=True)
     return creds
   except Exception as e:
     print(f"Error refreshing token: {e}")
-    return None
+    raise
 
 
 def _save_credentials(
@@ -69,7 +54,7 @@ def _save_credentials(
         f"Token file '{token_file}' already exists. Use replace=True to overwrite."
       )
     else:
-      print(f"Warning: Overwriting existing token file '{token_file}'.")
+      print(f"⚠️Warning: Overwriting existing token file '{token_file}'.")
   with open(token_file, "w") as f:
     json.dump(creds_json, f, indent=2)
 
@@ -123,24 +108,42 @@ def get_youtube_service_if_authenticated() -> YouTubeService | None:
 def authenticate_youtube(force: bool = False) -> YouTubeService:
   """Authenticate with YouTube API and return the service object."""
   token_file: str = TOKEN_FILE
-  creds: oauth2Credentials | externalCredentials | None = _load_credentials(token_file)
 
-  # If there are no (valid) credentials available, let the user log in.
+  # Force re-authentication if requested
   if force:
-    print("Forcing re-authentication...")
+    print("🔑 Forcing re-authentication")
     creds = _auth_flow(token_file)
     _save_credentials(creds, token_file, replace=True)
+    return build("youtube", "v3", credentials=creds)
 
-  elif not creds or not creds.valid:
-    if creds and creds.expired and creds.refresh_token:
-      print("Refreshing expired YouTube API credentials...")
-      creds = _refresh_credentials(creds, token_file)
-    if not creds:
-      print("No valid credentials found. Starting fresh authentication flow...")
-      creds = _auth_flow(token_file)
-    # save new creds
+  # Load existing credentials
+  creds = _load_credentials(token_file)
+
+  # No credentials found - start fresh authentication
+  if creds is None:
+    print("🔑 Starting YouTube API authentication flow...")
+    creds = _auth_flow(token_file)
     _save_credentials(creds, token_file, replace=True)
-  else:
-    print("Using cached YouTube API credentials...")
+    return build("youtube", "v3", credentials=creds)
 
+  # Valid credentials found - use them
+  if creds.valid:
+    print("Using cached YouTube API credentials...")
+    return build("youtube", "v3", credentials=creds)
+
+  # Expired credentials - try to refresh
+  if creds.expired and creds.refresh_token:
+    print("Refreshing expired YouTube API credentials...")
+    try:
+      creds = _refresh_credentials(creds, token_file)
+      _save_credentials(creds, token_file, replace=True)
+      return build("youtube", "v3", credentials=creds)
+    except Exception:
+      print("Failed to refresh credentials, starting fresh authentication flow...")
+  else:
+    print("Couldn't refresh credentials, starting fresh authentication flow...")
+
+  # Fallback - start fresh authentication
+  creds = _auth_flow(token_file)
+  _save_credentials(creds, token_file, replace=True)
   return build("youtube", "v3", credentials=creds)

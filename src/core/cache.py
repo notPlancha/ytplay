@@ -79,7 +79,7 @@ def save_cached_data(
       json.dump(data, f, indent=2, ensure_ascii=False)
     return True
   except (OSError, TypeError) as e:
-    print(f"Warning: Failed to save cache file {cache_file}: {e}")
+    print(f"⚠️Warning: Failed to save cache file {cache_file}: {e}")
     return False
 
 
@@ -128,7 +128,7 @@ def clear_cache(cache_type: CacheType | None = None) -> int:
           removed_count += 1
 
   except OSError as e:
-    print(f"Warning: Error while clearing cache: {e}")
+    print(f"⚠️Warning: Error while clearing cache: {e}")
 
   return removed_count
 
@@ -160,7 +160,7 @@ def get_cache_stats() -> dict[str, int]:
           stats["videos_durations"] += 1
 
   except OSError as e:
-    print(f"Warning: Error while getting cache stats: {e}")
+    print(f"⚠️Warning: Error while getting cache stats: {e}")
 
   return stats
 

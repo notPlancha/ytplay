@@ -123,7 +123,7 @@ def add_videos_to_playlist_sequential(
   Args:
       service: YouTube service instance
       playlist_id: Target playlist ID
-      video_ids: List of video IDs to add
+        video_ids: List of video IDs to add
       start_position: Starting position in playlist
       show_progress: Whether to show progress bar
 
@@ -552,7 +552,7 @@ def create_sorted_playlist(
           }
           videos.append(enhanced_video)
         except KeyError as e:
-          print(f"Warning: Skipping video due to missing key: {e}")
+          print(f"⚠️Warning: Skipping video due to missing key: {e}")
           continue
     else:
       videos = None
