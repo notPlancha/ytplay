@@ -1,6 +1,7 @@
 """YouTube Playlist CLI Tool."""
 
 import os
+
 import click
 
 from .auth_commands import auth
@@ -11,25 +12,30 @@ from .playlist_commands import playlist
 @click.group()
 @click.version_option(version="1.0.0-dev", prog_name="ytplay")
 @click.option(
-    "--config-dir",
-    envvar="YTPLAY_CONFIG_DIR",
-    help="Directory for configuration files (also: YTPLAY_CONFIG_DIR env var)",
-    metavar="PATH"
+  "--config-dir",
+  envvar="YTPLAY_CONFIG_DIR",
+  help="Directory for configuration files (also: YTPLAY_CONFIG_DIR env var)",
+  metavar="PATH",
 )
 @click.option(
-    "--client-secrets",
-    envvar="YTPLAY_CLIENT_SECRETS", 
-    help="Path to client_secrets.json file (also: YTPLAY_CLIENT_SECRETS env var)",
-    metavar="PATH"
+  "--client-secrets",
+  envvar="YTPLAY_CLIENT_SECRETS",
+  help="Path to client_secrets.json file (also: YTPLAY_CLIENT_SECRETS env var)",
+  metavar="PATH",
 )
 @click.option(
-    "--token-file",
-    envvar="YTPLAY_TOKEN_FILE",
-    help="Path to token file for authentication (also: YTPLAY_TOKEN_FILE env var)", 
-    metavar="PATH"
+  "--token-file",
+  envvar="YTPLAY_TOKEN_FILE",
+  help="Path to token file for authentication (also: YTPLAY_TOKEN_FILE env var)",
+  metavar="PATH",
 )
 @click.pass_context
-def main(ctx: click.Context, config_dir: str | None, client_secrets: str | None, token_file: str | None) -> None:
+def main(
+  ctx: click.Context,
+  config_dir: str | None,
+  client_secrets: str | None,
+  token_file: str | None,
+) -> None:
   """
   YouTube Playlist CLI Tool
 
@@ -39,7 +45,7 @@ def main(ctx: click.Context, config_dir: str | None, client_secrets: str | None,
   Configuration:
   Use environment variables or command-line options to customize file locations:
   • YTPLAY_CONFIG_DIR: Directory for config files (default: OS app data dir + /ytplay/)
-  • YTPLAY_CLIENT_SECRETS: Path to client_secrets.json (default: <config_dir>/client_secrets.json)  
+  • YTPLAY_CLIENT_SECRETS: Path to client_secrets.json (default: <config_dir>/client_secrets.json)
   • YTPLAY_TOKEN_FILE: Path to token file (default: <config_dir>/youtube.dat)
 
   \b
@@ -56,13 +62,13 @@ def main(ctx: click.Context, config_dir: str | None, client_secrets: str | None,
   """
   # Ensure the context object exists
   ctx.ensure_object(dict)
-  
+
   # Set environment variables if CLI options are provided
   # This allows the config module to pick up the values
   if config_dir:
     os.environ["YTPLAY_CONFIG_DIR"] = config_dir
   if client_secrets:
-    os.environ["YTPLAY_CLIENT_SECRETS"] = client_secrets  
+    os.environ["YTPLAY_CLIENT_SECRETS"] = client_secrets
   if token_file:
     os.environ["YTPLAY_TOKEN_FILE"] = token_file
 
