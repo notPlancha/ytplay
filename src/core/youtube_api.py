@@ -114,7 +114,7 @@ def add_videos_to_playlist_sequential(
   video_ids: list[str],
   start_position: int = 0,
   show_progress: bool = True,
-) -> tuple[int, int, int]:
+) -> tuple[int, int, int, bool]:
   """Add multiple videos to a playlist using individual requests.
 
   This function now continues processing even when videos fail to be added,
@@ -128,14 +128,15 @@ def add_videos_to_playlist_sequential(
       show_progress: Whether to show progress bar
 
   Returns:
-      Tuple of (successful_count, unavailable_count, other_failures_count)
+      Tuple of (successful_count, unavailable_count, other_failures_count, quota_exceeded)
   """
   if not video_ids:
-    return 0, 0, 0
+    return 0, 0, 0, False
 
   successful_count = 0
   unavailable_count = 0
   other_failures_count = 0
+  quota_exceeded = False
   unavailable_videos = []
 
   # Initialize progress bar
@@ -162,6 +163,7 @@ def add_videos_to_playlist_sequential(
     # quota
     elif error_type == "quota_exceeded":
       print("❌ Quota exceeded, try again tomorrow")
+      quota_exceeded = True
       if pbar:
         pbar.close()
       break
@@ -187,7 +189,7 @@ def add_videos_to_playlist_sequential(
     for video_id in unavailable_videos:
       print(f"   - https://www.youtube.com/watch?v={video_id}")
 
-  return successful_count, unavailable_count, other_failures_count
+  return successful_count, unavailable_count, other_failures_count, quota_exceeded
 
 
 def get_playlists(
@@ -585,11 +587,20 @@ def create_sorted_playlist(
 
   # Use sequential processing (batch processing is not available)
   video_ids = [video["video_id"] for video in sorted_videos]
-  successful_count, unavailable_count, other_failures_count = (
+  successful_count, unavailable_count, other_failures_count, quota_exceeded = (
     add_videos_to_playlist_sequential(
       service, new_playlist_id, video_ids, show_progress=show_progress
     )
   )
+
+  # Handle quota exceeded - this is always a failure case
+  if quota_exceeded:
+    if successful_count > 0:
+      print(f"❌ Process terminated due to quota exceeded after adding {successful_count} videos.")
+      print(f"Partial playlist created: https://www.youtube.com/playlist?list={new_playlist_id}")
+    else:
+      print("❌ Process terminated due to quota exceeded before adding any videos.")
+    return None  # Always return None for quota exceeded
 
   if other_failures_count > 0:
     print(
