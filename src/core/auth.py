@@ -3,6 +3,7 @@
 import json
 import os
 
+import click
 from google.auth.external_account_authorized_user import (
   Credentials as externalCredentials,
 )
@@ -25,19 +26,6 @@ def _load_credentials(
   if os.path.exists(token_file):
     return oauth2Credentials.from_authorized_user_file(token_file, SCOPES)
   return None
-
-
-def _refresh_credentials(
-  creds: oauth2Credentials | externalCredentials, token_file: str
-) -> oauth2Credentials | externalCredentials:
-  """Refresh credentials if possible and save them."""
-  try:
-    creds.refresh(Request())
-    _save_credentials(creds, token_file, replace=True)
-    return creds
-  except Exception as e:
-    print(f"Error refreshing token: {e}")
-    raise
 
 
 def _save_credentials(
@@ -121,10 +109,11 @@ def refresh_expired_credentials(
 ) -> YouTubeService | None:
   """Try to refresh expired credentials. Returns None if refresh fails."""
   token_file: str = TOKEN_FILE
+  click.echo("Refreshing expired credentials...")
   try:
-    refreshed_creds = _refresh_credentials(creds, token_file)
-    _save_credentials(refreshed_creds, token_file, replace=True)
-    return build("youtube", "v3", credentials=refreshed_creds)
+    creds.refresh(Request())
+    _save_credentials(creds, token_file, replace=True)
+    return build("youtube", "v3", credentials=creds)
   except Exception:
     return None
 
