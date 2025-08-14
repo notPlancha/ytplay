@@ -23,7 +23,7 @@ def _load_credentials(
 ) -> oauth2Credentials | externalCredentials | None:
   """Load credentials from a token file if it exists."""
   if os.path.exists(token_file):
-    oauth2Credentials.from_authorized_user_file(token_file, SCOPES)
+    return oauth2Credentials.from_authorized_user_file(token_file, SCOPES)
   return None
 
 

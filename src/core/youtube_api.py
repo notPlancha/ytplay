@@ -591,8 +591,6 @@ def create_sorted_playlist(
     )
   )
 
-  total_processed = successful_count + unavailable_count + other_failures_count
-
   if other_failures_count > 0:
     print(
       f"⚠️  Encountered {other_failures_count} serious error(s) during playlist creation."

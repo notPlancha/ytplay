@@ -209,3 +209,4 @@ Overengineered for sure but whtv thats what happens with vibe coding.
 
 ## TODO
 - [ ] Make sorting resumable
+- [ ] Make login cancelable

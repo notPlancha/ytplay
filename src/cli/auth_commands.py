@@ -7,7 +7,11 @@ from pathlib import Path
 import click
 
 from ..config import CONFIG_DIR, TOKEN_FILE, get_config_info
-from ..core.auth import authenticate_youtube
+from ..core.auth import (
+  authenticate_youtube,
+  force_reauthentication,
+  get_youtube_service_if_authenticated,
+)
 from ..core.youtube_api import get_playlists
 
 
@@ -33,7 +37,7 @@ def login(force: bool) -> None:
         f"🔑 {click.style('Forcing re-authentication...', fg='cyan', bold=True)}"
       )
       # Use specific force function
-      service = force_fresh_authentication()
+      service = force_reauthentication()
     elif os.path.exists(token_file):
       click.echo(
         f"🔑 Found existing credentials at: {click.style(token_file, fg='cyan')}"
@@ -41,7 +45,7 @@ def login(force: bool) -> None:
       click.echo(f"🔍 {click.style('Checking existing credentials...', fg='yellow')}")
 
       # Try existing credentials first
-      service = authenticate_with_existing_credentials()
+      service = get_youtube_service_if_authenticated()
       if service is None:
         # If existing credentials don't work, fall back to full authentication
         service = authenticate_youtube()
@@ -90,8 +94,6 @@ def status() -> None:
     click.echo(f"🔍 {click.style('Checking authentication status...', fg='yellow')}")
 
     # Use the non-triggering service getter for status check
-    from ..core.auth import get_youtube_service_if_authenticated
-
     service = get_youtube_service_if_authenticated()
 
     if service is None:
