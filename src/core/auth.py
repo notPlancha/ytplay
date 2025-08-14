@@ -81,6 +81,45 @@ def _auth_flow(token_out: str) -> oauth2Credentials | externalCredentials:
   return creds
 
 
+def check_valid_credentials() -> bool:
+  """Check if valid credentials exist without triggering authentication."""
+  token_file: str = TOKEN_FILE
+  creds: oauth2Credentials | externalCredentials | None = _load_credentials(token_file)
+
+  if not creds:
+    return False
+
+  if creds.valid:
+    return True
+
+  # Try to refresh if we have a refresh token
+  if creds.expired and creds.refresh_token:
+    refreshed_creds = _refresh_credentials(creds, token_file)
+    return refreshed_creds is not None and refreshed_creds.valid
+
+  return False
+
+
+def get_youtube_service_if_authenticated() -> YouTubeService | None:
+  """Get YouTube service if valid credentials exist, otherwise return None."""
+  token_file: str = TOKEN_FILE
+  creds: oauth2Credentials | externalCredentials | None = _load_credentials(token_file)
+
+  if not creds:
+    return None
+
+  if creds.valid:
+    return build("youtube", "v3", credentials=creds)
+
+  # Try to refresh if we have a refresh token
+  if creds.expired and creds.refresh_token:
+    refreshed_creds = _refresh_credentials(creds, token_file)
+    if refreshed_creds and refreshed_creds.valid:
+      return build("youtube", "v3", credentials=refreshed_creds)
+
+  return None
+
+
 def authenticate_youtube(force: bool = False) -> YouTubeService:
   """Authenticate with YouTube API and return the service object."""
   token_file: str = TOKEN_FILE
@@ -99,7 +138,8 @@ def authenticate_youtube(force: bool = False) -> YouTubeService:
     if not creds:
       print("No valid credentials found. Starting fresh authentication flow...")
       creds = _auth_flow(token_file)
-
+    # save new creds
+    _save_credentials(creds, token_file, replace=True)
   else:
     print("Using cached YouTube API credentials...")
 

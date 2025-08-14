@@ -178,9 +178,6 @@ def add_videos_to_playlist_sequential(
     if pbar:
       pbar.update(1)
 
-    # Small delay to avoid rate limiting
-    time.sleep(0.1)
-
   if pbar:
     pbar.close()
 

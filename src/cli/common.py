@@ -5,18 +5,21 @@ from typing import Any, TypeVar
 
 import click
 
-from ..core.auth import authenticate_youtube
+from ..core.auth import get_youtube_service_if_authenticated
 from ..core.youtube_api import get_playlists
 from ..types.youtube import YouTubeService
 
 
 def get_authenticated_service() -> YouTubeService:
   """Get authenticated YouTube service, handling errors."""
-  try:
-    return authenticate_youtube()
-  except Exception as error:
-    click.echo(f"❌ Authentication failed: {error}", err=True)
+  service = get_youtube_service_if_authenticated()
+  if service is None:
+    click.echo(
+      f"❌ {click.style('Not authenticated.', fg='red', bold=True)} "
+      f"Run {click.style('ytplay auth login', fg='cyan', bold=True)} first."
+    )
     raise click.Abort()
+  return service
 
 
 def select_playlist_interactive(
