@@ -27,47 +27,50 @@ def login(force: bool) -> None:
   """Authenticate with YouTube and store credentials."""
   try:
     token_file = TOKEN_FILE
-    if os.path.exists(token_file):
+
+    if force:
+      click.echo(
+        f"🔑 {click.style('Forcing re-authentication...', fg='cyan', bold=True)}"
+      )
+      # Use specific force function
+      service = force_fresh_authentication()
+    elif os.path.exists(token_file):
       click.echo(
         f"🔑 Found existing credentials at: {click.style(token_file, fg='cyan')}"
       )
-      service = authenticate_youtube(force=force)
-      if not force:  # Check if existing credentials are valid
-        click.echo(
-          f"🔍 {click.style('Checking existing YouTube API credentials...', fg='yellow')}"
-        )
-        playlists = get_playlists(service, max_results=1)
-        if playlists is not None:
-          click.echo(
-            f"✅ {click.style('Authentication verified! Using cached credentials.', fg='green', bold=True)}"
-          )
-        else:
-          click.echo("❌ Authentication failed or no access to playlists.")
-      else:
-        # When force=True, verify the new authentication worked
-        click.echo(f"🔍 {click.style('Verifying new authentication...', fg='yellow')}")
-        playlists = get_playlists(service, max_results=1)
-        if playlists is not None:
-          click.echo(
-            f"✅ {click.style('Authentication successful! New credentials stored.', fg='green', bold=True)}"
-          )
-        else:
-          click.echo("❌ Authentication failed or no access to playlists.")
+      click.echo(f"🔍 {click.style('Checking existing credentials...', fg='yellow')}")
+
+      # Try existing credentials first
+      service = authenticate_with_existing_credentials()
+      if service is None:
+        # If existing credentials don't work, fall back to full authentication
+        service = authenticate_youtube()
     else:
       click.echo(
         f"🔑 {click.style('Starting YouTube API authentication flow...', fg='cyan', bold=True)}"
       )
+      # Use general authentication for fresh setup
       service = authenticate_youtube()
 
-      # Verify the new authentication worked
-      click.echo(f"🔍 {click.style('Verifying authentication...', fg='yellow')}")
-      playlists = get_playlists(service, max_results=1)
-      if playlists is not None:
+    # Verify authentication worked by testing API access
+    click.echo(f"🔍 {click.style('Verifying authentication...', fg='yellow')}")
+    playlists = get_playlists(service, max_results=1)
+
+    if playlists is not None:
+      if force:
+        click.echo(
+          f"✅ {click.style('Authentication successful! New credentials stored.', fg='green', bold=True)}"
+        )
+      elif os.path.exists(token_file):
+        click.echo(
+          f"✅ {click.style('Authentication verified! Using existing credentials.', fg='green', bold=True)}"
+        )
+      else:
         click.echo(
           f"✅ {click.style('Login successful! You are now authenticated.', fg='green', bold=True)}"
         )
-      else:
-        click.echo("❌ Authentication failed or no access to playlists.")
+    else:
+      click.echo("❌ Authentication failed or no access to playlists.")
 
   except Exception as error:
     click.echo(f"❌ An error occurred during authentication: {error}", err=True)
@@ -85,7 +88,19 @@ def status() -> None:
       return
 
     click.echo(f"🔍 {click.style('Checking authentication status...', fg='yellow')}")
-    service = authenticate_youtube()
+
+    # Use the non-triggering service getter for status check
+    from ..core.auth import get_youtube_service_if_authenticated
+
+    service = get_youtube_service_if_authenticated()
+
+    if service is None:
+      click.echo(
+        f"❌ {click.style('Invalid or expired credentials.', fg='red', bold=True)} Try {click.style('ytplay auth login --force', fg='cyan', bold=True)}."
+      )
+      return
+
+    # Test API access
     playlists = get_playlists(service, max_results=1)
 
     if playlists is not None:
