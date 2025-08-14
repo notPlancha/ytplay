@@ -1,6 +1,7 @@
 """YouTube Playlist CLI Tool."""
 
 import os
+from importlib.metadata import PackageNotFoundError, version
 
 import click
 
@@ -9,8 +10,16 @@ from .cache_commands import cache
 from .playlist_commands import playlist
 
 
+def get_version() -> str:
+  """Get the package version from metadata, fallback to development version."""
+  try:
+    return version("ytplay")
+  except PackageNotFoundError:
+    return "dev"
+
+
 @click.group()
-@click.version_option(version="1.0.0-dev", prog_name="ytplay")
+@click.version_option(version=get_version(), prog_name="ytplay")
 @click.option(
   "--config-dir",
   envvar="YTPLAY_CONFIG_DIR",
