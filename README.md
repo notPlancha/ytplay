@@ -129,6 +129,7 @@ ytplay auth status                   # Check authentication status
 ytplay auth logout                   # Remove stored credentials
 ytplay auth config show             # Show current configuration paths
 ytplay auth config add <path>       # Copy configuration file to config directory
+ytplay auth config remove --help     # Show help for removing configuration files
 ```
 
 **Playlist Management:**

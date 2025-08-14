@@ -596,8 +596,12 @@ def create_sorted_playlist(
   # Handle quota exceeded - this is always a failure case
   if quota_exceeded:
     if successful_count > 0:
-      print(f"❌ Process terminated due to quota exceeded after adding {successful_count} videos.")
-      print(f"Partial playlist created: https://www.youtube.com/playlist?list={new_playlist_id}")
+      print(
+        f"❌ Process terminated due to quota exceeded after adding {successful_count} videos."
+      )
+      print(
+        f"Partial playlist created: https://www.youtube.com/playlist?list={new_playlist_id}"
+      )
     else:
       print("❌ Process terminated due to quota exceeded before adding any videos.")
     return None  # Always return None for quota exceeded

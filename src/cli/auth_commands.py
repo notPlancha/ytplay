@@ -255,5 +255,112 @@ def config_add(source_path: Path, name: str, force: bool) -> None:
     click.echo(f"❌ Failed to copy configuration file: {error}", err=True)
 
 
+@config.command("remove")
+@click.option(
+  "--client-secrets",
+  is_flag=True,
+  help="Remove client secrets file",
+)
+@click.option(
+  "--token",
+  is_flag=True,
+  help="Remove authentication token file",
+)
+@click.option(
+  "--all",
+  is_flag=True,
+  help="Remove all configuration files",
+)
+@click.option(
+  "--force",
+  "-f",
+  is_flag=True,
+  help="Skip confirmation prompts",
+)
+def config_remove(client_secrets: bool, token: bool, all: bool, force: bool) -> None:
+  """Remove configuration files.
+
+  Remove specific configuration files or all configuration files.
+  Use --client-secrets to remove client_secrets.json,
+  --token to remove the authentication token file,
+  or --all to remove all configuration files.
+  """
+  try:
+    config_info = get_config_info()
+
+    # Determine what to remove
+    remove_secrets = client_secrets or all
+    remove_token = token or all
+
+    if not (remove_secrets or remove_token):
+      click.echo("❌ No files specified for removal.")
+      click.echo("   Use --client-secrets, --token, or --all")
+      click.echo("   Run 'ytplay auth config remove --help' for more options")
+      return
+
+    # Collect files that exist
+    files_to_remove = []
+    if remove_secrets and os.path.exists(config_info["client_secrets"]):
+      files_to_remove.append(("Client secrets", config_info["client_secrets"]))
+    if remove_token and os.path.exists(config_info["token_file"]):
+      files_to_remove.append(("Token file", config_info["token_file"]))
+
+    if not files_to_remove:
+      click.echo(
+        f"ℹ️  {click.style('No configuration files found to remove.', fg='blue')}"
+      )
+      return
+
+    # Show what will be removed
+    click.echo(f"\n🗑️  {click.style('Files to be removed:', fg='red', bold=True)}")
+    for description, file_path in files_to_remove:
+      click.echo(f"   {description}: {click.style(file_path, fg='cyan')}")
+
+    # Confirmation prompt unless --force is used
+    if not force:
+      click.echo(
+        f"\n⚠️  {click.style('Warning:', fg='yellow', bold=True)} This action cannot be undone."
+      )
+      if not click.confirm("Are you sure you want to remove these files?"):
+        click.echo("❌ Removal cancelled.")
+        return
+
+    # Remove the files
+    removed_count = 0
+    for description, file_path in files_to_remove:
+      try:
+        os.remove(file_path)
+        click.echo(f"✅ Removed {description}: {click.style(file_path, fg='green')}")
+        removed_count += 1
+      except FileNotFoundError:
+        click.echo(
+          f"ℹ️  {description} was already removed: {click.style(file_path, fg='blue')}"
+        )
+      except PermissionError:
+        click.echo(
+          f"❌ Permission denied removing {description}: {click.style(file_path, fg='red')}"
+        )
+      except Exception as e:
+        click.echo(f"❌ Error removing {description}: {click.style(str(e), fg='red')}")
+
+    if removed_count > 0:
+      click.echo(
+        f"\n✅ {click.style(f'Successfully removed {removed_count} configuration file(s).', fg='green', bold=True)}"
+      )
+
+      # Show next steps if client secrets were removed
+      if remove_secrets and removed_count > 0:
+        click.echo(f"\n💡 {click.style('Next Steps:', fg='yellow', bold=True)}")
+        click.echo("   To use ytplay again, you'll need to:")
+        click.echo("   1. Download client_secrets.json from Google Cloud Console")
+        click.echo(
+          f"   2. Run: {click.style('ytplay auth config add <path_to_secrets>', fg='green')}"
+        )
+        click.echo(f"   3. Run: {click.style('ytplay auth login', fg='green')}")
+
+  except Exception as error:
+    click.echo(f"❌ Failed to remove configuration files: {error}", err=True)
+
+
 # Add the config subgroup to auth
 auth.add_command(config)
