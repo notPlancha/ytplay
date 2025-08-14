@@ -185,10 +185,17 @@ The project is organized into a clean, modular structure:
 ```
 sort-wl/
 ├── main.py                    # Entry point for the CLI application
+├── pyproject.toml             # Project configuration and dependencies
+├── uv.lock                    # Dependency lock file (uv sync --dev)
+├── .pre-commit-config.yaml    # Pre-commit hooks configuration (uv run pre-commit install)
+├── ruff.toml                  # Ruff linter/formatter configuration (uv run ruff format/check --fix)
 ├── src/                       # Main source code
 │   ├── cli/                   # CLI interface and commands
 │   │   ├── __init__.py
-│   │   └── commands.py        # Click command definitions
+│   │   ├── auth_commands.py   # Authentication CLI commands
+│   │   ├── cache_commands.py  # Cache management CLI commands
+│   │   ├── playlist_commands.py # Playlist management CLI commands
+│   │   └── common.py          # Common CLI utilities
 │   ├── core/                  # Core business logic
 │   │   ├── __init__.py
 │   │   ├── auth.py           # YouTube API authentication
